@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'send_email',
 ]
 
 MIDDLEWARE = [
@@ -101,6 +103,11 @@ USE_I18N = True
 
 USE_TZ = True
 
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'oybekyuldashov54@gmail.com'
+EMAIL_HOST_PASSWORD = 'znibpuoknenwgqoy'
+EMAIL_USE_SSL = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
