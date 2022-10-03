@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class SendEmailConfig(AppConfig):
+class AdvertisementsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'send_email'
+    name = 'api.v1.advertisements'
