@@ -1,5 +1,5 @@
 from django.contrib import admin
 
-from .models import Wishlist
+from .models import Wishlist, AddProductToWishlist
 
-admin.site.register(Wishlist)
+admin.site.register([Wishlist, AddProductToWishlist])

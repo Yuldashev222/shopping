@@ -16,6 +16,8 @@ class CustomUser(AbstractBaseUser):
     phone_number = modelfields.PhoneNumberField(unique=True)
     role = models.CharField(max_length=10, choices=enums.CustomUserRoles.choices())
 
+    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
+
     desc = models.CharField(max_length=1000, blank=True, null=True)
     second_phone_number = modelfields.PhoneNumberField(blank=True, null=True)
 
