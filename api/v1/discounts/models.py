@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db import models
 from django.utils.timezone import now as datetime_now
 
@@ -9,30 +7,42 @@ from . import enums
 
 
 class Discount(models.Model):
-    desc = models.CharField(max_length=1000)
-    type = models.CharField(max_length=10, choices=enums.DiscountType.choices())
-    start_date = models.DateTimeField(default=datetime_now)
-    end_date = models.DateTimeField()
-    per_limited_count = models.IntegerField(blank=True, null=True)
-    per_customers_count = models.IntegerField(blank=True, null=True)
-    delivery_service = models.BooleanField(default=False)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    desc = models.TextField(blank=True, null=True)
+    type = models.CharField(max_length=20, choices=enums.DiscountType.choices())
+    start_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
-
-    coupon_code = models.IntegerField(blank=True, null=True)
-
-    is_percent = models.BooleanField(default=True)
-    percent = models.IntegerField(blank=True, null=True)
-
-    min_sum = models.IntegerField(blank=True, null=True)
-    max_sum = models.IntegerField(blank=True, null=True)
-
     creator = models.ForeignKey(Manager, on_delete=models.SET_NULL, null=True)
+    quantity = models.PositiveIntegerField(blank=True, null=True)
+    per_client_limit = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # discount types
+    # ------------------
+    # 1 - price or percent
+    price_or_percent = models.PositiveIntegerField(blank=True, null=True)
+    is_percent = models.BooleanField(default=True)
+
+    # 2 - min sum max sum
+    minimum_purchase = models.IntegerField(blank=True, null=True)
+
+    # 3 - Buy n items and get the (n + 1)th free!
+    free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
+    quantity_to_free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # 4 - free delivery service
+    free_delivery = models.BooleanField(default=False)
+    # --------------------
+
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(auto_now=True, editable=False)
 
 
-class AddDiscountToProduct(models.Model):
-    product = models.ForeignKey(AddToProduct, on_delete=models.PROTECT)
+class ProductDiscount(models.Model):
+    product = models.ForeignKey(AddToProduct, on_delete=models.CASCADE)
     discount = models.ForeignKey(Discount, models.PROTECT)
-    count = models.PositiveSmallIntegerField(default=1)
+    creator = models.ForeignKey(Manager, on_delete=models.SET_NULL, null=True)
+    quantity = models.PositiveSmallIntegerField(blank=True, null=True)
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)

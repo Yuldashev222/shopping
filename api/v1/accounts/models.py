@@ -1,104 +1,95 @@
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, AbstractUser
-from django.core.validators import FileExtensionValidator
-from django.utils.translation import gettext_lazy as _
 from phonenumber_field import modelfields
-from django.contrib.auth import get_user_model
+from django.db import models
+from django.core.mail import send_mail
+from django.core.validators import FileExtensionValidator
+from django.contrib.auth.models import AbstractBaseUser, AbstractUser, User, PermissionsMixin
+from django.utils.translation import gettext_lazy as _
 
-from . import managers, enums, services
+from .services import upload_location_profile_picture
+from .validators import validate_size_profile_picture
+from .managers import CustomUserManager
+from .enums import CustomUserRole
 
 
-class CustomUser(AbstractBaseUser):
-    first_name = models.CharField(_("first name"), max_length=50)
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    phone_number = modelfields.PhoneNumberField(_("phone number"), unique=True)
+    email = models.EmailField(_("email address"), blank=True)
+    first_name = models.CharField(_("first name"), max_length=30)
     last_name = models.CharField(_("last name"), max_length=50)
-    father_name = models.CharField(_("father name"), max_length=70, blank=True, null=True)
-    email = models.EmailField(verbose_name="email", max_length=60, unique=True)
-    phone_number = modelfields.PhoneNumberField(unique=True)
-    role = models.CharField(max_length=10, choices=enums.CustomUserRoles.choices())
+    date_joined = models.DateTimeField(_("date joined"), auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(_("date updated"), auto_now=True, editable=False)
+    role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
+    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
 
-    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
+    objects = CustomUserManager()
 
-    desc = models.CharField(max_length=1000, blank=True, null=True)
-    second_phone_number = modelfields.PhoneNumberField(blank=True, null=True)
+    EMAIL_FIELD = "email"
+    USERNAME_FIELD = "phone_number"
+    REQUIRED_FIELDS = ['role', 'first_name', 'last_name']
 
-    objects = managers.CustomUserManager()
+    is_staff = models.BooleanField(_("staff status"), default=False)
+    is_active = models.BooleanField(_("active"), default=True)
+    is_superuser = models.BooleanField(_("superuser status"), default=False)
 
-    USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name', 'role']
-
-    is_admin = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-
-    date_joined = models.DateTimeField(verbose_name='date joined', auto_now_add=True,
-                                       editable=False)
-    last_login = models.DateTimeField(verbose_name='last login', auto_now=True,
-                                      editable=False)
-
-    profile_image = models.ImageField(
-        upload_to=services.upload_location_profile_image,
-        validators=[
-            FileExtensionValidator(allowed_extensions=('jpg', 'png', 'jpeg', 'svg')),
-            services.validate_size_image
-        ],
-        null=True,
+    # second fields
+    desc = models.CharField(_('Description'), blank=True, max_length=500)
+    profile_picture = models.ImageField(
+        verbose_name=_('Profile picture'),
+        upload_to=upload_location_profile_picture,
         blank=True,
-        # default profile image ...
-    )
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
+            validate_size_profile_picture
+        ]
+    ),
 
-    home1_address_country = models.CharField(max_length=100, help_text='country in home',
-                                             blank=True, null=True)
-    home1_address_region = models.CharField(max_length=100, help_text='region in home',
-                                            blank=True, null=True)
-    home1_address_street = models.CharField(max_length=100, help_text='street in home',
-                                            blank=True, null=True)
-    home2_address_country = models.CharField(max_length=100, help_text='country in second home',
-                                             blank=True, null=True)
-    home2_address_region = models.CharField(max_length=100, help_text='region in second home',
-                                            blank=True, null=True)
-    home2_address_street = models.CharField(max_length=100, help_text='street in second home',
-                                            blank=True, null=True)
-    office_address_country = models.CharField(max_length=100, help_text='address country in office',
-                                              blank=True, null=True)
-    office_address_region = models.CharField(max_length=100, help_text='address region in office',
-                                             blank=True, null=True)
-    office_address_street = models.CharField(max_length=100, help_text='address street in office',
-                                             blank=True, null=True)
+    # country_1 = models.CharField(
+    #     max_length=15,
+    #     blank=True
+    # )
+    # region_1 = models.CharField(max_length=100, blank=True)
+    # district_1 = models.CharField(max_length=100, blank=True)
+    # street_1 = models.CharField(max_length=100, blank=True)
+    #
+    # # constant address
+    # region_2 = models.CharField(
+    #     max_length=15,
+    #     blank=True,
+    #     null=True,
+    #     help_text='your current state of residence'
+    # )
+    # city_2 = models.CharField(
+    #     max_length=100,
+    #     blank=True,
+    #     null=True,
+    #     help_text='your current city of residence'
+    # )
+    # street_2 = models.CharField(
+    #     max_length=100,
+    #     blank=True,
+    #     null=True,
+    #     help_text='your current residential address'
+    # )
 
     def __str__(self):
-        if self.father_name:
-            return self.first_name + '-' + self.last_name + '-' + self.father_name
-        return self.first_name + '-' + self.last_name
+        return self.get_full_name()
 
-    def get_profile_image_filename(self):
-        return str(self.profile_image)[str(self.profile_image).index('profile_images/' + str(self.pk) + "/"):]
+    def clean(self):
+        super().clean()
+        self.email = self.__class__.objects.normalize_email(self.email)
 
-    # For checking permissions. to keep it simple all admin have ALL permissons
-    def has_perm(self, perm, obj=None):
-        return self.is_admin
+    def get_full_name(self):
+        full_name = "%s %s" % (self.first_name, self.last_name)
+        return full_name.strip()
 
-    # Does this user have permission to view this app? (ALWAYS YES FOR SIMPLICITY)
-    def has_module_perms(self, app_label):
-        return True
+    def get_short_name(self):
+        """Return the short name for the user."""
+        return self.first_name
 
-
-class Client(get_user_model()):
-    objects = managers.ClientsManager()
-
-    class Meta:
-        proxy = True
-
-
-class Manager(get_user_model()):
-    objects = managers.ManagersManager()
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        """Send an email to this user."""
+        send_mail(subject, message, from_email, [self.email], **kwargs)
 
     class Meta:
-        proxy = True
-
-
-class Vendor(get_user_model()):
-    objects = managers.VendorsManager()
-
-    class Meta:
-        proxy = True
+        verbose_name = _("user")
+        verbose_name_plural = _("users")

@@ -2,9 +2,11 @@ from enum import Enum
 
 
 class DiscountType(Enum):
-    coupon = 'coupon'
-    discount = 'discount'
-    summa = 'summa'
+    price = 'price'
+    percent = 'percent'
+    minimum_purchase = 'minimum_purchase'
+    by_quantity = 'by_quantity'
+    free_delivery = 'free_delivery'
 
     @classmethod
     def choices(cls):

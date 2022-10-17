@@ -1,10 +1,12 @@
 from enum import Enum
 
 
-class CustomUserRoles(Enum):
+class CustomUserRole(Enum):
     manager = 'manager'
     client = 'client'
     vendor = 'vendor'
+    director = 'director'
+    developer = 'developer'
 
     @classmethod
     def choices(cls):

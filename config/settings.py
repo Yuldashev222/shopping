@@ -27,23 +27,22 @@ INSTALLED_APPS = [
 ]
 
 APPS = [
-    'api.v1.general',
-    'api.v1.advertisements',
-    'api.v1.carts',
-    'api.v1.comments',
-    'api.v1.discounts',
-    'api.v1.invoices',
-    'api.v1.orders',
-    'api.v1.products',
-    'api.v1.wishlists',
+    # 'api.v1.general',
+    # 'api.v1.advertisements',
+    # 'api.v1.comments',
+    # 'api.v1.discounts',
+    # 'api.v1.invoices',
+    # 'api.v1.orders',
+    # 'api.v1.products',
+    # 'api.v1.wishlists',
     'api.v1.accounts',
 
     # integration apps
-    'api.v1.integrations.mail',
-    'api.v1.integrations.google',
-    'api.v1.integrations.oneid',
-    'api.v1.integrations.payments',
-    'api.v1.integrations.sms'
+    # 'api.v1.integrations.mail',
+    # 'api.v1.integrations.google',
+    # 'api.v1.integrations.oneid',
+    # 'api.v1.integrations.payments',
+    # 'api.v1.integrations.sms'
 ]
 
 LIBS = [
@@ -53,7 +52,6 @@ LIBS = [
     'phonenumber_field',
     'multiselectfield',
     'colorfield',
-
 ]
 
 INSTALLED_APPS += APPS + LIBS
@@ -134,7 +132,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tashkent'
 
 USE_I18N = True
 
@@ -142,7 +140,7 @@ USE_TZ = True
 
 
 AUTHENTICATION_BACKENDS = [
-    'api.v1.accounts.backends.EmailPhoneUsernameAuthenticationBackend',
+    'api.v1.accounts.backends.EmailPhoneAuthenticationBackend',
 ]
 
 REST_FRAMEWORK = {

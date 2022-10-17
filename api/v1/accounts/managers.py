@@ -1,60 +1,77 @@
-from django.contrib.auth.models import BaseUserManager
-from django.db.models.manager import Manager
-
-from .enums import CustomUserRoles
+from django.contrib.auth.base_user import BaseUserManager
+from django.apps import apps
+from django.contrib.auth.hashers import make_password
+from django.contrib import auth
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, first_name, phone_number, last_name, role, password=None):
-        if not email:
-            raise ValueError('Users must have an email address')
+    use_in_migrations = True
+
+    def _create_user(self, phone_number, role, first_name, last_name, email, password=None, **extra_fields):
         if not phone_number:
-            raise ValueError('Users must have a phone number')
-        if not first_name:
-            raise ValueError('Users must have an first name')
-        if not last_name:
-            raise ValueError('Users must have a last name')
+            raise ValueError("The given phone number must be set")
         if not role:
-            raise ValueError('Users must have a role')
+            raise ValueError("The given role must be set")
+        if not first_name:
+            raise ValueError("The given first name must be set")
+        if not last_name:
+            raise ValueError("The given last name must be set")
+        email = self.normalize_email(email)
 
+        GlobalUserModel = apps.get_model(
+            self.model._meta.app_label,
+            self.model._meta.object_name
+        )
         user = self.model(
-            email=self.normalize_email(email),
             phone_number=phone_number,
+            role=role,
             first_name=first_name,
             last_name=last_name,
-            role=role,
-        )
+            email=email,
+            **extra_fields)
 
-        user.set_password(password)
+        user.password = make_password(password)
+
         user.save(using=self._db)
+
         return user
 
-    def create_superuser(self, email, first_name, phone_number, last_name, role, password):
-        user = self.create_user(
-            email=self.normalize_email(email),
-            password=password,
-            phone_number=phone_number,
-            first_name=first_name,
-            last_name=last_name,
-            role=role,
-        )
-        user.is_admin = True
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-        return user
+    def create_user(self, phone_number, role, first_name, last_name, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return self._create_user(phone_number, role, first_name, last_name, email, password, **extra_fields)
 
+    def create_superuser(self, phone_number, role, first_name, last_name, email=None, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
-class VendorsManager(Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(role=CustomUserRoles.vendor.value)
+        return self._create_user(phone_number, role, first_name, last_name, email, password, **extra_fields)
 
-
-class ClientsManager(Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(role=CustomUserRoles.client.value)
-
-
-class ManagersManager(Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(role=CustomUserRoles.manager.value)
+    def with_perm(self, perm, is_active=True, include_superusers=True, backend=None, obj=None):
+        if backend is None:
+            backends = auth._get_backends(return_tuples=True)
+            if len(backends) == 1:
+                backend, _ = backends[0]
+            else:
+                raise ValueError(
+                    "You have multiple authentication backends configured and "
+                    "therefore must provide the `backend` argument."
+                )
+        elif not isinstance(backend, str):
+            raise TypeError(
+                "backend must be a dotted import path string (got %r)." % backend
+            )
+        else:
+            backend = auth.load_backend(backend)
+        if hasattr(backend, "with_perm"):
+            return backend.with_perm(
+                perm,
+                is_active=is_active,
+                include_superusers=include_superusers,
+                obj=obj,
+            )
+        return self.none()

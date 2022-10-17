@@ -1,9 +1,8 @@
 from django.db.models import Q
-from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
 
 
-class EmailPhoneUsernameAuthenticationBackend(object):
+class EmailPhoneAuthenticationBackend(object):
     supports_object_permissions = True
     supports_anonymous_user = False
     supports_inactive_user = False
@@ -20,7 +19,6 @@ class EmailPhoneUsernameAuthenticationBackend(object):
             user = get_user_model().objects.get(
                 Q(email=email_or_phone) | Q(phone_number=email_or_phone)
             )
-
         except get_user_model().DoesNotExist:
             return None
 
