@@ -1,18 +1,31 @@
 from django.contrib import admin
 
-
 from .models import (
+    ProductColor,
+    ProductSize,
     Brand,
     Category,
-    Manufacturer,
-    ProductImages,
+    SubCategory,
+    ProductManufacturer,
+    ProductImage,
     Product,
-    ProductAsterisk,
-    ProductColor,
-    AddToProduct
+    ProductItem,
+    ProductStar,
+    ProductComment
  )
 
-
 admin.site.register(
-    [Brand, Category, Manufacturer, ProductImages, Product, ProductAsterisk, ProductColor, AddToProduct]
+    [
+        ProductColor,
+        ProductSize,
+        Brand,
+        Category,
+        SubCategory,
+        ProductManufacturer,
+        ProductImage,
+        Product,
+        ProductItem,
+        ProductStar,
+        ProductComment
+    ]
 )

@@ -17,6 +17,23 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+APPS = [
+    'api.v1.accounts',
+    'api.v1.products',
+    'api.v1.orders',
+    'api.v1.wishlists',
+    'api.v1.discounts',
+    'api.v1.general',
+    'api.v1.delivery',
+    'api.v1.advertisements',
+
+    # integration apps
+    # 'api.v1.integrations.mail',
+    # 'api.v1.integrations.google',
+    # 'api.v1.integrations.oneid',
+    # 'api.v1.integrations.payments',
+    # 'api.v1.integrations.sms'
+]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -26,24 +43,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-APPS = [
-    # 'api.v1.general',
-    # 'api.v1.advertisements',
-    # 'api.v1.comments',
-    # 'api.v1.discounts',
-    # 'api.v1.invoices',
-    # 'api.v1.orders',
-    # 'api.v1.products',
-    # 'api.v1.wishlists',
-    'api.v1.accounts',
-
-    # integration apps
-    # 'api.v1.integrations.mail',
-    # 'api.v1.integrations.google',
-    # 'api.v1.integrations.oneid',
-    # 'api.v1.integrations.payments',
-    # 'api.v1.integrations.sms'
-]
 
 LIBS = [
     'rest_framework',
@@ -51,7 +50,6 @@ LIBS = [
     'taggit',
     'phonenumber_field',
     'multiselectfield',
-    'colorfield',
 ]
 
 INSTALLED_APPS += APPS + LIBS

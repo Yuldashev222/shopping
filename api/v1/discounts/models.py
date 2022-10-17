@@ -1,8 +1,7 @@
 from django.db import models
-from django.utils.timezone import now as datetime_now
 
-from api.v1.accounts.models import Manager
-from api.v1.products.models import AddToProduct
+from api.v1.accounts.models import Leader
+from api.v1.products.models import ProductItem
 from . import enums
 
 
@@ -12,10 +11,12 @@ class Discount(models.Model):
     type = models.CharField(max_length=20, choices=enums.DiscountType.choices())
     start_date = models.DateTimeField(blank=True, null=True)
     end_date = models.DateTimeField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    creator = models.ForeignKey(Manager, on_delete=models.SET_NULL, null=True)
-    quantity = models.PositiveIntegerField(blank=True, null=True)
+    all_quantity = models.PositiveIntegerField(blank=True, null=True)
     per_client_limit = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # connections
+    creator = models.ForeignKey(Leader, on_delete=models.SET_NULL, null=True)
+    # -----------
 
     # discount types
     # ------------------
@@ -36,13 +37,26 @@ class Discount(models.Model):
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.type) + str(self.title)
 
 
-class ProductDiscount(models.Model):
-    product = models.ForeignKey(AddToProduct, on_delete=models.CASCADE)
-    discount = models.ForeignKey(Discount, models.PROTECT)
-    creator = models.ForeignKey(Manager, on_delete=models.SET_NULL, null=True)
+class DiscountItem(models.Model):
     quantity = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # connections
+    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
+    discount = models.ForeignKey(Discount, models.PROTECT)
+    adder = models.ForeignKey(Leader, on_delete=models.SET_NULL, null=True)
+    # -----------
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.discount}: to product {self.product}'

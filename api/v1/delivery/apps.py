@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 
-class CommentsConfig(AppConfig):
+class DeliveryConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'api.v1.comments'
+    name = 'api.v1.delivery'
+    label = 'delivery'

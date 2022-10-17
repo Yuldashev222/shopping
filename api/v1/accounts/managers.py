@@ -1,7 +1,10 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.apps import apps
+from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from django.contrib import auth
+
+from .enums import CustomUserRole
 
 
 class CustomUserManager(BaseUserManager):
@@ -39,9 +42,18 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, phone_number, role, first_name, last_name, email=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
-        return self._create_user(phone_number, role, first_name, last_name, email, password, **extra_fields)
+        return self._create_user(
+            phone_number=phone_number,
+            role=role,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            **extra_fields
+        )
 
-    def create_superuser(self, phone_number, role, first_name, last_name, email=None, password=None, **extra_fields):
+    def create_superuser(self, phone_number, first_name, last_name, email=None, password=None, **extra_fields):
+        role = CustomUserRole.developer.value
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         if extra_fields.get("is_staff") is not True:
@@ -49,7 +61,15 @@ class CustomUserManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self._create_user(phone_number, role, first_name, last_name, email, password, **extra_fields)
+        return self._create_user(
+            phone_number=phone_number,
+            role=role,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            **extra_fields
+        )
 
     def with_perm(self, perm, is_active=True, include_superusers=True, backend=None, obj=None):
         if backend is None:
@@ -75,3 +95,45 @@ class CustomUserManager(BaseUserManager):
                 obj=obj,
             )
         return self.none()
+
+
+class ClientManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role=CustomUserRole.client.value)
+
+
+class DirectorManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role=CustomUserRole.director.value)
+
+
+class ManagerManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role=CustomUserRole.manager.value)
+
+
+class DeveloperManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role=CustomUserRole.developer.value)
+
+
+class VendorManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role=CustomUserRole.vendor.value)
+
+
+class StaffManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role__in=(
+            CustomUserRole.director.value,
+            CustomUserRole.manager.value,
+            CustomUserRole.vendor.value
+        ))
+
+
+class LeaderManager(CustomUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(role__in=(
+            CustomUserRole.director.value,
+            CustomUserRole.manager.value,
+        ))

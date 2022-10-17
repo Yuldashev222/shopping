@@ -2,22 +2,33 @@ from phonenumber_field import modelfields
 from django.db import models
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
-from django.contrib.auth.models import AbstractBaseUser, AbstractUser, User, PermissionsMixin
+from django.core.exceptions import ValidationError
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 
 from .services import upload_location_profile_picture
 from .validators import validate_size_profile_picture
-from .managers import CustomUserManager
+from .managers import (
+    CustomUserManager,
+    ClientManager,
+    DirectorManager,
+    ManagerManager,
+    DeveloperManager,
+    VendorManager,
+    StaffManager,
+    LeaderManager,
+)
 from .enums import CustomUserRole
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    phone_number = modelfields.PhoneNumberField(_("phone number"), unique=True)
-    email = models.EmailField(_("email address"), blank=True)
-    first_name = models.CharField(_("first name"), max_length=30)
-    last_name = models.CharField(_("last name"), max_length=50)
-    date_joined = models.DateTimeField(_("date joined"), auto_now_add=True, editable=False)
-    date_updated = models.DateTimeField(_("date updated"), auto_now=True, editable=False)
+    phone_number = modelfields.PhoneNumberField(_("Phone number"), unique=True)
+    second_phone_number = modelfields.PhoneNumberField(_("Second phone number"), blank=True)
+    email = models.EmailField(_("Email address"), blank=True, unique=True)
+    first_name = models.CharField(_("First name"), max_length=30)
+    last_name = models.CharField(_("Last name"), max_length=50)
+    date_joined = models.DateTimeField(_("Date joined"), auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(_("Date updated"), auto_now=True, editable=False)
     role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
     creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -25,7 +36,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ['role', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     is_staff = models.BooleanField(_("staff status"), default=False)
     is_active = models.BooleanField(_("active"), default=True)
@@ -43,39 +54,33 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ]
     ),
 
-    # country_1 = models.CharField(
-    #     max_length=15,
-    #     blank=True
-    # )
-    # region_1 = models.CharField(max_length=100, blank=True)
-    # district_1 = models.CharField(max_length=100, blank=True)
-    # street_1 = models.CharField(max_length=100, blank=True)
-    #
-    # # constant address
-    # region_2 = models.CharField(
-    #     max_length=15,
-    #     blank=True,
-    #     null=True,
-    #     help_text='your current state of residence'
-    # )
-    # city_2 = models.CharField(
-    #     max_length=100,
-    #     blank=True,
-    #     null=True,
-    #     help_text='your current city of residence'
-    # )
-    # street_2 = models.CharField(
-    #     max_length=100,
-    #     blank=True,
-    #     null=True,
-    #     help_text='your current residential address'
-    # )
+    # address 1
+    country_1 = models.CharField(max_length=15, blank=True)
+    region_1 = models.CharField(max_length=100, blank=True)
+    district_1 = models.CharField(max_length=100, blank=True)
+    street_1 = models.CharField(max_length=100, blank=True)
+
+    # address 2
+    country_2 = models.CharField(max_length=15, blank=True)
+    region_2 = models.CharField(max_length=100, blank=True)
+    district_2 = models.CharField(max_length=100, blank=True)
+    street_2 = models.CharField(max_length=100, blank=True)
+
+    # address 3
+    country_3 = models.CharField(max_length=15, blank=True)
+    region_3 = models.CharField(max_length=100, blank=True)
+    district_3 = models.CharField(max_length=100, blank=True)
+    street_3 = models.CharField(max_length=100, blank=True)
+
+    # card 1
 
     def __str__(self):
         return self.get_full_name()
 
     def clean(self):
-        super().clean()
+        if self.phone_number == self.second_phone_number:
+            raise ValidationError('first and second phone numbers already exists')
+        setattr(self, self.USERNAME_FIELD, self.normalize_username(self.get_username()))
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
@@ -93,3 +98,67 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = _("user")
         verbose_name_plural = _("users")
+        ordering = ('date_joined', 'role')
+        constraints = (
+            models.UniqueConstraint(
+                name='unique_director_role',
+                fields=['role'],
+                condition=models.Q(role=CustomUserRole.director.value)
+            ),
+        )
+
+
+class Client(CustomUser):
+    objects = ClientManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
+
+
+class Director(CustomUser):
+    objects = DirectorManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
+
+
+class Manager(CustomUser):
+    objects = ManagerManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
+
+
+class Developer(CustomUser):
+    objects = DeveloperManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
+
+
+class Vendor(CustomUser):
+    objects = VendorManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
+
+
+class Staff(CustomUser):
+    objects = StaffManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
+
+
+class Leader(CustomUser):
+    objects = LeaderManager()
+
+    class Meta:
+        proxy = True
+        ordering = ('date_joined',)
