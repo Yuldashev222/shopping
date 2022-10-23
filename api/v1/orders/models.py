@@ -16,8 +16,8 @@ class Order(models.Model):
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
-    is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
+    is_successfully = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.order_id}. Client: {self.client}'

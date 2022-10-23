@@ -24,19 +24,19 @@ from .enums import CustomUserRole
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     phone_number = modelfields.PhoneNumberField(_("Phone number"), unique=True)
     second_phone_number = modelfields.PhoneNumberField(_("Second phone number"), blank=True)
-    email = models.EmailField(_("Email address"), blank=True, unique=True)
+    email = models.EmailField(_("Email address"), unique=True)
     first_name = models.CharField(_("First name"), max_length=30)
     last_name = models.CharField(_("Last name"), max_length=50)
     date_joined = models.DateTimeField(_("Date joined"), auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(_("Date updated"), auto_now=True, editable=False)
     role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
-    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)  # last
 
     objects = CustomUserManager()
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
 
     is_staff = models.BooleanField(_("staff status"), default=False)
     is_active = models.BooleanField(_("active"), default=True)
@@ -44,6 +44,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     # second fields
     desc = models.CharField(_('Description'), blank=True, max_length=500)
+
     profile_picture = models.ImageField(
         verbose_name=_('Profile picture'),
         upload_to=upload_location_profile_picture,
@@ -51,8 +52,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         validators=[
             FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
             validate_size_profile_picture
-        ]
-    ),
+        ],
+        null=True
+    )
 
     # address 1
     country_1 = models.CharField(max_length=15, blank=True)
@@ -78,10 +80,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.get_full_name()
 
     def clean(self):
+        errors = dict()
+
         if self.phone_number == self.second_phone_number:
-            raise ValidationError('first and second phone numbers already exists')
-        setattr(self, self.USERNAME_FIELD, self.normalize_username(self.get_username()))
-        self.email = self.__class__.objects.normalize_email(self.email)
+            errors['phone_numbers'] = ['first and second phone numbers already exists.']
+
+        if errors:
+            raise ValidationError(errors)
 
     def get_full_name(self):
         full_name = "%s %s" % (self.first_name, self.last_name)
@@ -96,8 +101,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
     class Meta:
-        verbose_name = _("user")
-        verbose_name_plural = _("users")
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
         ordering = ('date_joined', 'role')
         constraints = (
             models.UniqueConstraint(

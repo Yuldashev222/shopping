@@ -4,6 +4,7 @@ from taggit.managers import TaggableManager
 from api.v1.accounts import models as account_models
 from api.v1.delivery.models import Delivery
 from .enums import ProductDepartments, ProductStars
+from .services import upload_location_product_image
 
 
 class ProductColor(models.Model):
@@ -50,6 +51,7 @@ class Brand(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True, db_index=True)
     creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True)
+    category_parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -61,24 +63,6 @@ class Category(models.Model):
     class Meta:
         ordering = ('name',)
         verbose_name_plural = 'Categories'
-
-
-class SubCategory(models.Model):
-    name = models.CharField(max_length=255, unique=True, db_index=True)
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-
-    date_created = models.DateTimeField(auto_now_add=True, editable=False)
-    date_updated = models.DateTimeField(auto_now=True, editable=False)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        ordering = ('name',)
-        verbose_name = 'Sub Category'
-        verbose_name_plural = 'Sub Categories'
 
 
 class ProductManufacturer(models.Model):
@@ -96,29 +80,13 @@ class ProductManufacturer(models.Model):
         ordering = ('name',)
 
 
-class ProductImage(models.Model):
-    main_image = models.ImageField(upload_to='Products/images/', help_text='main image')
-    image1 = models.ImageField(upload_to='Products/images/', blank=True)
-    image2 = models.ImageField(upload_to='Products/images/', blank=True)
-    image3 = models.ImageField(upload_to='Products/images/', blank=True)
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True)
-
-    date_created = models.DateTimeField(auto_now_add=True, editable=False)
-    date_updated = models.DateTimeField(auto_now=True, editable=False)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        verbose_name = 'Product Image'
-        verbose_name_plural = 'Product Images'
-
-
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
     desc = models.TextField(max_length=1500, blank=True)
     department = models.CharField(max_length=1, choices=ProductDepartments.choices())
 
     # connections
-    sub_category = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
+    sub_category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     creator = models.ForeignKey(account_models.Staff, models.SET_NULL, null=True)
     # -----------
 
@@ -132,6 +100,7 @@ class Product(models.Model):
 
 
 class ProductItem(models.Model):
+    name = models.CharField(max_length=400)
     price = models.PositiveIntegerField(help_text='enter the price in dollars.')
     count_in_stock = models.PositiveSmallIntegerField(default=1, help_text='how many do you want to add?')
     count_booked = models.PositiveSmallIntegerField(default=0)
@@ -144,12 +113,10 @@ class ProductItem(models.Model):
     # connections
     delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT, blank=True, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    image = models.ForeignKey(ProductImage, on_delete=models.SET_NULL, null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     manufacturer = models.ForeignKey(ProductManufacturer, on_delete=models.SET_NULL, null=True, blank=True)
     size = models.ForeignKey(ProductSize, on_delete=models.PROTECT)
     color = models.ForeignKey(ProductColor, on_delete=models.PROTECT)
-
     creator = models.ForeignKey(account_models.Staff, models.SET_NULL, null=True)
     # -----------
 
@@ -157,6 +124,24 @@ class ProductItem(models.Model):
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.name}. price: {self.price}'
+
+
+class ProductImage(models.Model):
+    image = models.ImageField(upload_to=upload_location_product_image)
+    is_main = models.BooleanField(default=False)
+    product_item = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
+    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True)
+
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(auto_now=True, editable=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Product Image'
+        verbose_name_plural = 'Product Images'
 
 
 class ProductStar(models.Model):
@@ -172,10 +157,10 @@ class ProductStar(models.Model):
 
 
 class ProductComment(models.Model):
-    text = models.CharField(max_length=200)
+    text = models.CharField(max_length=400)
 
     product_item = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
-    client = models.ForeignKey(account_models.Client, on_delete=models.SET_NULL, null=True, blank=True)
+    client = models.ForeignKey(account_models.Client, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         if self.client:

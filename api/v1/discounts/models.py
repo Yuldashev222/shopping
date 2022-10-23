@@ -3,6 +3,7 @@ from django.db import models
 from api.v1.accounts.models import Leader
 from api.v1.products.models import ProductItem
 from . import enums
+from .services import upload_location_discount_file, upload_location_discount_image
 
 
 class Discount(models.Model):
@@ -13,6 +14,10 @@ class Discount(models.Model):
     end_date = models.DateTimeField(blank=True, null=True)
     all_quantity = models.PositiveIntegerField(blank=True, null=True)
     per_client_limit = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # additional fields
+    file = models.FileField(upload_to=upload_location_discount_file, blank=True, null=True)
+    image = models.ImageField(upload_to=upload_location_discount_image, blank=True, null=True)
 
     # connections
     creator = models.ForeignKey(Leader, on_delete=models.SET_NULL, null=True)
