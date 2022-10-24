@@ -1,7 +1,9 @@
-
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework import (
-    viewsets
+    viewsets,
+    status
 )
 
 from api.v1.accounts.models import CustomUser
@@ -11,8 +13,14 @@ from api.v1.accounts.serializers.all_users import UserSerializer
 class UserAPIViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    
-    def list(self, request, *args, **kwargs):
 
-        # send_mail('blablabla', 'blablabla', from_email=None, recipient_list=['oybekyuldashov54@gmail.com'])
-        return super(UserAPIViewSet, self).list(request, *args, **kwargs)
+
+@api_view(['POST'])
+def user_logout(request, *args, **kwargs):
+    # try:
+    #     token = request.auth
+    #     refresh_token = AccessToken(token)
+    #     return Response(status=status.HTTP_205_RESET_CONTENT)
+    # except Exception as e:
+    #     return Response(status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_400_BAD_REQUEST)

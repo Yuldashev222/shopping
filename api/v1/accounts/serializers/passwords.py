@@ -55,4 +55,24 @@ class ResetPasswordSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField()
+    password = serializers.CharField(max_length=128, validators=[password_validation.validate_password])
+    re_password = serializers.CharField()
+
+    def validate(self, attrs):
+        if not self.instance.check_password(attrs['old_password']):
+            raise serializers.ValidationError({'old_password': ['The password was entered incorrectly.']})
+
+        if attrs['password'] != attrs['re_password']:
+            raise serializers.ValidationError({'re_password': ['passwords are not the same']})
+        return attrs
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data['password'])
+        instance.save()
         return instance
