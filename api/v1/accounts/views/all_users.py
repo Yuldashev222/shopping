@@ -1,12 +1,12 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework import (
     viewsets,
     status
 )
 
 from api.v1.accounts.models import CustomUser
+from api.v1.accounts.enums import CustomUserRole
 from api.v1.accounts.serializers.all_users import UserSerializer
 
 
@@ -24,3 +24,5 @@ def user_logout(request, *args, **kwargs):
     # except Exception as e:
     #     return Response(status=status.HTTP_400_BAD_REQUEST)
     return Response(status=status.HTTP_400_BAD_REQUEST)
+
+

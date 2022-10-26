@@ -26,7 +26,7 @@ class ForgotPasswordSerializer(serializers.Serializer):
             uid = urlsafe_base64_encode(force_bytes(user.id))
             token = default_token_generator.make_token(user)
             subject = 'Link to reset your password'
-            recipient_list = [settings.EMAIL_HOST_USER]
+            recipient_list = [email]
             message = f'Hi {user}.\n' \
                       'Click the link below to create a new password\n' \
                       f'Link: http://127.0.0.1:8000/api/v1/accounts/reset-password/{uid}/{token}/'
@@ -39,7 +39,7 @@ class ForgotPasswordSerializer(serializers.Serializer):
                     fail_silently=True
                 )
                 return True
-            except:
+            except ValueError:
                 return False
         return False
 

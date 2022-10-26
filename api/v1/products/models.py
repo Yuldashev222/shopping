@@ -95,16 +95,6 @@ class Product(models.Model):
     creator = models.ForeignKey(account_models.Staff, models.SET_NULL, null=True)
     # -----------
 
-    available_from_date = models.DateField(
-        blank=True,
-        null=True,
-        help_text='from what date the product is available',
-    )
-    available_to_date = models.DateField(
-        blank=True,
-        null=True,
-        help_text='until when is the product available',
-    )
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
@@ -112,30 +102,6 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        errors = dict()
-
-        #  available_to_date and available_from_date validations ---------------
-        today_date = date.today()
-        if self.available_from_date and self.available_to_date:
-            if self.available_from_date < today_date:
-                errors['available_from_date'] = ['the available date must not be less than today\'s date']
-            if self.available_from_date >= self.available_to_date:
-                errors['available_to_date'] = ['the available from data must be less than the to date']
-
-        elif self.available_from_date and self.available_from_date < today_date:
-            errors['available_from_date'] = ['the available date must not be less than today\'s date']
-
-        elif self.available_to_date:
-            if self.available_to_date <= today_date:
-                errors['available_to_date'] = ['the available to data must be to day date']
-            else:
-                self.available_from_date = today_date
-        #  ------------------------------------------------
-
-        if errors:
-            raise ValidationError(errors)
 
 
 class ProductItem(models.Model):
@@ -146,7 +112,6 @@ class ProductItem(models.Model):
     count_in_stock = models.PositiveSmallIntegerField(default=1, help_text='how many do you want to add?')
     count_booked = models.PositiveSmallIntegerField(default=0)
     count_sold = models.PositiveIntegerField(default=0)
-    delivery_service = models.BooleanField(default=False)
     available_from_date = models.DateField(
         blank=True,
         null=True,

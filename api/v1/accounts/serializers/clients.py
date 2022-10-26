@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from api.v1.accounts.models import Client
+from api.v1.accounts import models, enums
 
 
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Client
+        model = models.Client
         fields = (
             'phone_number',
             'second_phone_number',
@@ -31,3 +31,17 @@ class ClientSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True, 'style': {'input_type': 'password'}},
         }
+
+
+class CreateClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Client
+        fields = ['phone_number', 'email', 'first_name', 'last_name', 'password', 'role']
+        extra_kwargs = {
+            'password': {'write_only': True, 'style': {'input_type': 'password'}},
+            'role': {'read_only': True}
+        }
+
+    def create(self, validated_data):
+        role = enums.CustomUserRole.client.value
+        return models.Client.objects.create_user(role=role, **validated_data)

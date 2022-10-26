@@ -5,14 +5,14 @@ from rest_framework import (
     status
 )
 
-from api.v1.products.models import Product
-from api.v1.products.serializers.products import ProductSerializer
+from api.v1.products.models import ProductItem
+from api.v1.products.serializers.products_items import ProductItemSerializer
 from api.v1.products.permissions import IsStaffOrReadOnly
 
 
-class ProductAPIViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+class ProductItemAPIViewSet(viewsets.ModelViewSet):
+    queryset = ProductItem.objects.all()
+    serializer_class = ProductItemSerializer
     permission_classes = [permissions.IsAuthenticated & IsStaffOrReadOnly]
 
     def create(self, request, *args, **kwargs):

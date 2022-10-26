@@ -10,6 +10,7 @@ from api.v1.products.views import (
     stars,
     comments,
     products,
+    products_items
 )
 
 router = routers.SimpleRouter()
@@ -22,4 +23,5 @@ router.register('manufacturers', manufacturers.ProductManufacturerAPIViewSet)
 router.register('images', images.ProductImageAPIViewSet)
 router.register('stars', stars.ProductStarAPIViewSet)
 router.register('comments', comments.ProductCommentAPIViewSet)
+router.register('product_items', products_items.ProductItemAPIViewSet)
 router.register('', products.ProductAPIViewSet)
