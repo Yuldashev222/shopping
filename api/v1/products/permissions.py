@@ -10,3 +10,13 @@ class IsStaffOrReadOnly(permissions.BasePermission):
         if request.user.role in self.staff_roles or request.method in permissions.SAFE_METHODS:
             return True
         return False
+
+
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    staff_roles = (CustomUserRole.director.value, CustomUserRole.manager.value, CustomUserRole.vendor.value)
+
+    def has_permission(self, request, view):
+        if request.user.role in self.staff_roles or request.method in permissions.SAFE_METHODS:
+            print(view)
+            return True
+        return False

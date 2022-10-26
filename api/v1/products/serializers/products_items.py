@@ -1,10 +1,10 @@
 from datetime import date
 from rest_framework import serializers
 
-from api.v1.products.models import Product
+from api.v1.products.models import ProductItem
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductItemSerializer(serializers.ModelSerializer):
     creator = serializers.HiddenField(default=serializers.CurrentUserDefault())
     category_id = serializers.IntegerField()
     date_created = serializers.DateTimeField(read_only=True, write_only=False)
@@ -12,7 +12,7 @@ class ProductSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(default=True)
 
     class Meta:
-        model = Product
+        model = ProductItem
         fields = '__all__'
 
     def validate(self, attrs):
