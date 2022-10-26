@@ -11,9 +11,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -174,8 +174,8 @@ SIMPLE_JWT = {
 }
 
 STATIC_URL = 'static/'
-# STATIC_ROOT = BASE_DIR / 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static/']
+STATIC_ROOT = BASE_DIR / 'static/'
+#STATICFILES_DIRS = [BASE_DIR / 'static/']
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media/'
