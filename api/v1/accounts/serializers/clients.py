@@ -1,4 +1,5 @@
-from rest_framework import serializers
+from rest_framework import serializers, validators
+from rest_framework_simplejwt.serializers import PasswordField
 
 from api.v1.accounts import models, enums
 
@@ -38,7 +39,7 @@ class CreateClientSerializer(serializers.ModelSerializer):
         model = models.Client
         fields = ['phone_number', 'email', 'first_name', 'last_name', 'password', 'role']
         extra_kwargs = {
-            'password': {'write_only': True, 'style': {'input_type': 'password'}},
+            'password': {'write_only': True},
             'role': {'read_only': True}
         }
 

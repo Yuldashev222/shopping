@@ -28,3 +28,5 @@ def client_register(request, *args, **kwargs):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return response.Response(serializer.data, status=status.HTTP_201_CREATED)
+
+

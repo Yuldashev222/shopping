@@ -4,6 +4,7 @@ from taggit.managers import TaggableManager
 from datetime import date
 
 from api.v1.accounts import models as account_models
+from api.v1.general.services import date_from_today_date
 from api.v1.delivery.models import Delivery
 from api.v1.general.validators import active_relation
 from .enums import ProductDepartments, ProductStars
@@ -14,11 +15,11 @@ from .validators import validate_color_hexa
 class ProductColor(models.Model):
     name = models.CharField(max_length=50, unique=True, db_index=True)
     hexa = models.CharField(max_length=9, validators=[validate_color_hexa], unique=True, db_index=True)
+
     creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        #  ------------------------------------------------
         return f'{self.hexa}: {self.name}'
 
     class Meta:
@@ -59,6 +60,7 @@ class Category(models.Model):
     creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
 
+    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
@@ -105,7 +107,7 @@ class Product(models.Model):
 
 
 class ProductItem(models.Model):
-    name = models.CharField(max_length=400)
+    name = models.CharField(max_length=400, blank=True)
     desc = models.TextField(max_length=1500, blank=True)
     price = models.PositiveIntegerField(help_text='enter the price in dollars.')
     department = models.CharField(max_length=1, choices=ProductDepartments.choices())
@@ -115,20 +117,24 @@ class ProductItem(models.Model):
     available_from_date = models.DateField(
         blank=True,
         null=True,
-        help_text='from what date the product is available'
+        help_text='from what date the product is available',
+        # validators=[date_from_today_date]
     )
     available_to_date = models.DateField(
         blank=True,
         null=True,
-        help_text='until when is the product available'
+        help_text='until when is the product available',
+        # validators=[date_from_today_date]
     )
     tags = TaggableManager(blank=True)
 
     # connections
-    delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT, blank=True, null=True, validators=[active_relation])
+    delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT, blank=True, null=True,
+                                 validators=[active_relation])
     product = models.ForeignKey(Product, on_delete=models.CASCADE, validators=[active_relation])
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, validators=[active_relation])
-    manufacturer = models.ForeignKey(ProductManufacturer, on_delete=models.SET_NULL, null=True, blank=True, validators=[active_relation])
+    manufacturer = models.ForeignKey(ProductManufacturer, on_delete=models.SET_NULL, null=True, blank=True,
+                                     validators=[active_relation])
     size = models.ForeignKey(ProductSize, on_delete=models.PROTECT, validators=[active_relation])
     color = models.ForeignKey(ProductColor, on_delete=models.PROTECT, validators=[active_relation])
     creator = models.ForeignKey(account_models.Staff, models.SET_NULL, null=True, validators=[active_relation])
@@ -142,33 +148,38 @@ class ProductItem(models.Model):
     def __str__(self):
         return f'{self.name}. price: {self.price}'
 
-    def clean(self):
-        errors = dict()
+    class Meta:
+        ordering = ['date_added', ]
+        # constraints = [
+        #     models.CheckConstraint(
+        #         check=models.Q(available_from_date__gte=models.F('available_to_date')),
+        #         name='available_from_date_gte_date_today'
+        #     )
+        # ]
 
-        #  count_in_stock and count_booked validations
-        if self.count_in_stock < self.count_booked:
-            errors['count_booked'] = ['the number of products being booked must not exceed the number of products in stock!']
-
-        #  available_to_date and available_from_date validations ---------------
-        today_date = date.today()
-        if self.available_from_date and self.available_to_date:
-            if self.available_from_date < today_date:
-                errors['available_from_date'] = ['the available date must not be less than today\'s date']
-            if self.available_from_date >= self.available_to_date:
-                errors['available_to_date'] = ['the available from data must be less than the to date']
-
-        elif self.available_from_date and self.available_from_date < today_date:
-            errors['available_from_date'] = ['the available date must not be less than today\'s date']
-
-        elif self.available_to_date:
-            if self.available_to_date <= today_date:
-                errors['available_to_date'] = ['the available to data must be to day date']
-            else:
-                self.available_from_date = today_date
-        #  ------------------------------------------------
-
-        if errors:
-            raise ValidationError(errors)
+    # def clean(self):
+    #     errors = dict()
+    #
+    #     #  count_in_stock and count_booked validations
+    #     if self.count_in_stock < self.count_booked:
+    #         errors['count_booked'] = [
+    #             'the number of products being booked must not exceed the number of products in stock!']
+    #
+    #     #  available_to_date and available_from_date validations ---------------
+    #     today_date = date.today()
+    #     if self.available_from_date and self.available_to_date:
+    #         if self.available_from_date >= self.available_to_date:
+    #             errors['available_to_date'] = ['the available from data must be less than the to date']
+    #
+    #     elif self.available_to_date:
+    #         if self.available_to_date <= today_date:
+    #             errors['available_to_date'] = ['the available to data must be to day date']
+    #         else:
+    #             self.available_from_date = today_date
+    #     #  ------------------------------------------------
+    #
+    #     if errors:
+    #         raise ValidationError(errors)
 
 
 class ProductImage(models.Model):
