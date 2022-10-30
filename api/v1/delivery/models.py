@@ -16,12 +16,15 @@ class Delivery(models.Model):
         max_length=20,
         choices=DeliveryStatuses.choices(),
         default=DeliveryStatuses.order_processing.value,
-        blank=True,
-        null=True
     )
 
     # connections
-    creator = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True)
+    creator = models.ForeignKey(
+        Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
     # -----------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -33,3 +36,10 @@ class Delivery(models.Model):
         if self.title:
             return f'{self.status}: {self.price}. {self.title}'
         return f'{self.status}: {self.price}'
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted
+
+    class Meta:
+        verbose_name = 'Delivery'
+        verbose_name_plural = 'Deliveries'

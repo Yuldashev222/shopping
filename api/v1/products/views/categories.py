@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from rest_framework import (
     viewsets,
     permissions,
@@ -11,9 +12,9 @@ from api.v1.products.permissions import IsStaffOrReadOnly
 
 
 class ProductCategoryAPIViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.active_objects()
     serializer_class = ProductCategorySerializer
-    permission_classes = [permissions.IsAuthenticated & IsStaffOrReadOnly]
+    permission_classes = IsStaffOrReadOnly
 
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, list):

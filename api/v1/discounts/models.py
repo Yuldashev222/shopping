@@ -20,11 +20,15 @@ class Discount(models.Model):
     image = models.ImageField(upload_to=upload_location_discount_image, blank=True, null=True)
 
     # connections
-    creator = models.ForeignKey(Leader, on_delete=models.SET_NULL, null=True)
+    creator = models.ForeignKey(
+        Leader,
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
     # -----------
 
     # discount types
-    # ------------------
     # 1 - price or percent
     price_or_percent = models.PositiveIntegerField(blank=True, null=True)
     is_percent = models.BooleanField(default=True)
@@ -48,14 +52,30 @@ class Discount(models.Model):
     def __str__(self):
         return str(self.type) + str(self.title)
 
+    def active_object(self):
+        return self.is_active and not self.is_deleted
+
 
 class DiscountItem(models.Model):
     quantity = models.PositiveSmallIntegerField(blank=True, null=True)
 
     # connections
-    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
-    discount = models.ForeignKey(Discount, models.PROTECT)
-    adder = models.ForeignKey(Leader, on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey(
+        ProductItem,
+        on_delete=models.CASCADE,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    discount = models.ForeignKey(
+        Discount,
+        models.PROTECT,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    adder = models.ForeignKey(
+        Leader,
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
     # -----------
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
@@ -65,3 +85,6 @@ class DiscountItem(models.Model):
 
     def __str__(self):
         return f'{self.discount}: to product {self.product}'
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted

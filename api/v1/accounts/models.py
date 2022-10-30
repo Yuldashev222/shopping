@@ -40,6 +40,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     is_staff = models.BooleanField(_("staff status"), default=False)
     is_active = models.BooleanField(_("active"), default=True)
+    is_deleted = models.BooleanField(_("Is deleted"), default=False)
     is_superuser = models.BooleanField(_("superuser status"), default=False)
 
     # second fields
@@ -78,6 +79,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.get_full_name()
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted
 
     def clean(self):
         errors = dict()

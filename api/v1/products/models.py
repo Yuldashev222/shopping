@@ -15,12 +15,22 @@ from .validators import validate_color_hexa
 class ProductColor(models.Model):
     name = models.CharField(max_length=50, unique=True, db_index=True)
     hexa = models.CharField(max_length=9, validators=[validate_color_hexa], unique=True, db_index=True)
-
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
     is_active = models.BooleanField(default=True)
+
+    # connections
+    creator = models.ForeignKey(
+        account_models.Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        editable=False,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
 
     def __str__(self):
         return f'{self.hexa}: {self.name}'
+
+    def active_object(self):
+        return self.is_active
 
     class Meta:
         ordering = ('name',)
@@ -29,12 +39,22 @@ class ProductColor(models.Model):
 class ProductSize(models.Model):
     name = models.CharField(max_length=100, unique=True, db_index=True)
     desc = models.CharField(max_length=500, blank=True, null=True)
-
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
     is_active = models.BooleanField(default=True)
+
+    # connections
+    creator = models.ForeignKey(
+        account_models.Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        editable=False,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
 
     def __str__(self):
         return self.name
+
+    def active_object(self):
+        return self.is_active
 
     class Meta:
         ordering = ('name',)
@@ -43,13 +63,24 @@ class ProductSize(models.Model):
 class Brand(models.Model):
     name = models.CharField(max_length=255, unique=True, db_index=True)
 
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
+    # connections
+    creator = models.ForeignKey(
+        account_models.Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        editable=False,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+    def active_object(self):
+        return self.is_active
 
     class Meta:
         ordering = ('name',)
@@ -57,16 +88,30 @@ class Brand(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True, db_index=True)
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
 
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
+    # connections
+    parent = models.ForeignKey('self', on_delete=models.PROTECT, blank=True)
+    creator = models.ForeignKey(
+        account_models.Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        editable=False,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def active_objects(cls):
+        return cls.objects.filter(is_active=True)
+
+    def active_object(self):
+        return self.is_active
 
     class Meta:
         ordering = ('name',)
@@ -76,13 +121,24 @@ class Category(models.Model):
 class ProductManufacturer(models.Model):
     name = models.CharField(max_length=255, unique=True, db_index=True)
 
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
+    # connections
+    creator = models.ForeignKey(
+        account_models.Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        editable=False,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+    def active_object(self):
+        return self.is_active
 
     class Meta:
         ordering = ('name',)
@@ -93,8 +149,13 @@ class Product(models.Model):
     desc = models.TextField(max_length=2000, blank=True)
 
     # connections
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    creator = models.ForeignKey(account_models.Staff, models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, limit_choices_to={'is_active': True})
+    creator = models.ForeignKey(
+        account_models.Staff,
+        models.SET_NULL,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
     # -----------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -104,6 +165,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted
 
 
 class ProductItem(models.Model):
@@ -118,26 +182,48 @@ class ProductItem(models.Model):
         blank=True,
         null=True,
         help_text='from what date the product is available',
-        # validators=[date_from_today_date]
     )
     available_to_date = models.DateField(
         blank=True,
         null=True,
         help_text='until when is the product available',
-        # validators=[date_from_today_date]
     )
     tags = TaggableManager(blank=True)
 
     # connections
-    delivery = models.ForeignKey(Delivery, on_delete=models.PROTECT, blank=True, null=True,
-                                 validators=[active_relation])
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, validators=[active_relation])
-    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, validators=[active_relation])
-    manufacturer = models.ForeignKey(ProductManufacturer, on_delete=models.SET_NULL, null=True, blank=True,
-                                     validators=[active_relation])
-    size = models.ForeignKey(ProductSize, on_delete=models.PROTECT, validators=[active_relation])
-    color = models.ForeignKey(ProductColor, on_delete=models.PROTECT, validators=[active_relation])
-    creator = models.ForeignKey(account_models.Staff, models.SET_NULL, null=True, validators=[active_relation])
+    delivery = models.ForeignKey(
+        Delivery,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    brand = models.ForeignKey(
+        Brand,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'is_active': True}
+    )
+    manufacturer = models.ForeignKey(
+        ProductManufacturer,
+        on_delete=models.PROTECT,
+        blank=True,
+        limit_choices_to={'is_active': True}
+    )
+    creator = models.ForeignKey(
+        account_models.Staff,
+        models.SET_NULL,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    size = models.ForeignKey(ProductSize, on_delete=models.PROTECT, limit_choices_to={'is_active': True})
+    color = models.ForeignKey(ProductColor, on_delete=models.PROTECT, limit_choices_to={'is_active': True})
     # -----------
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
@@ -148,14 +234,11 @@ class ProductItem(models.Model):
     def __str__(self):
         return f'{self.name}. price: {self.price}'
 
+    def active_object(self):
+        return self.is_active and not self.is_deleted
+
     class Meta:
         ordering = ['date_added', ]
-        # constraints = [
-        #     models.CheckConstraint(
-        #         check=models.Q(available_from_date__gte=models.F('available_to_date')),
-        #         name='available_from_date_gte_date_today'
-        #     )
-        # ]
 
     # def clean(self):
     #     errors = dict()
@@ -185,12 +268,28 @@ class ProductItem(models.Model):
 class ProductImage(models.Model):
     image = models.ImageField(upload_to=upload_location_product_image, validators=[])
     is_main = models.BooleanField(default=False)
-    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
-    creator = models.ForeignKey(account_models.Staff, on_delete=models.SET_NULL, null=True, editable=False)
+    product = models.ForeignKey(
+        ProductItem,
+        on_delete=models.CASCADE,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    creator = models.ForeignKey(
+        account_models.Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        editable=False,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
     is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.product}: {self.image.name}'
+
+    def active_object(self):
+        return self.is_active
 
     class Meta:
         verbose_name = 'Product Image'
@@ -207,8 +306,18 @@ class ProductImage(models.Model):
 class ProductStar(models.Model):
     star = models.PositiveSmallIntegerField(choices=ProductStars.choices())
 
-    product = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
-    client = models.ForeignKey(account_models.Client, on_delete=models.SET_NULL, null=True, blank=True)
+    product = models.ForeignKey(
+        ProductItem,
+        on_delete=models.CASCADE,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    client = models.ForeignKey(
+        account_models.Client,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -216,17 +325,37 @@ class ProductStar(models.Model):
             return f'{self.client}: {self.star} stars'
         return f'{self.star} stars'
 
+    def active_object(self):
+        return self.is_active
+
     class Meta:
-        unique_together = ['product', 'client']  # ???
+        constraints = [
+            models.UniqueConstraint(
+                fields=['client', 'product'],
+                name='client_product_unique_product_star'
+            )
+        ]
 
 
 class ProductComment(models.Model):
     text = models.CharField(max_length=400)
 
-    product_item = models.ForeignKey(ProductItem, on_delete=models.CASCADE)
-    client = models.ForeignKey(account_models.Client, on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey(
+        ProductItem,
+        on_delete=models.CASCADE,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
+    client = models.ForeignKey(
+        account_models.Client,
+        on_delete=models.SET_NULL,
+        null=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False}
+    )
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.client}: {str(self.text).strip()[:30]}'
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted

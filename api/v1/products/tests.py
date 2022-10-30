@@ -1,8 +1,22 @@
-from django.test import TestCase
+# def f(numbers):
+#
+#     # recursiya qachon toxtashini elon qilib qoyayapman
+#     if len(numbers) == 1:
+#         return [numbers]
+#     result = []
+#
+#     for i in range(len(numbers)):
+#         m = numbers[i]
+#         new_numbers = numbers[:i] + numbers[i + 1:]
+#
+#         for j in f(new_numbers):
+#             result.append(m + j)
+#     return result
+#
+#
+# data = '123'
+# print(f(data))
 
-# Create your tests here.
-from datetime import date, datetime
 
-print(date.today())
-
-print(date.today() > datetime.today())
+letter = "54".isalpha()
+print(letter.real)

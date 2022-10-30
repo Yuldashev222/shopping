@@ -8,12 +8,12 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Snippets API",
+        title="Shopping API",
         default_version='v1',
         description="Test description",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
+        terms_of_service="https://t.me/yuldashev222/",
+        contact=openapi.Contact(email="oybekyuldashov54@gmail.com"),
+        license=openapi.License(name="UZB License"),
     ),
     public=True,
     permission_classes=[permissions.AllowAny],
@@ -27,7 +27,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/accounts/', include('api.v1.accounts.urls')),
     path('api/v1/products/', include('api.v1.products.urls')),
-
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
