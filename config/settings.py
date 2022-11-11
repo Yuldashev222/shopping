@@ -70,8 +70,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates/']
-        ,
+        'DIRS': [BASE_DIR / 'templates/'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -116,7 +115,11 @@ USE_I18N = True
 
 USE_TZ = True
 
+ADMIN_LOGIN = 'base_admin'
+ADMIN_PASSWORD = 'pbkdf2_sha256$320000$pzbSlU1ogPxybfdHPMdCBx$l/oSdW+1AaNofx65nfwM8Peg2hauUj2eF2AaHo6uwUg='
+
 AUTHENTICATION_BACKENDS = [
+    'api.v1.accounts.backends.SettingsBackend',
     'api.v1.accounts.backends.CustomModelBackend',
 ]
 

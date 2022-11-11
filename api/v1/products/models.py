@@ -90,7 +90,7 @@ class Category(models.Model):
     name = models.CharField(max_length=255, unique=True, db_index=True)
 
     # connections
-    parent = models.ForeignKey('self', on_delete=models.PROTECT, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.PROTECT, blank=True, null=True)
     creator = models.ForeignKey(
         account_models.Staff,
         on_delete=models.SET_NULL,
@@ -175,7 +175,7 @@ class ProductItem(models.Model):
     desc = models.TextField(max_length=1500, blank=True)
     price = models.PositiveIntegerField(help_text='enter the price in dollars.')
     department = models.CharField(max_length=1, choices=ProductDepartments.choices())
-    count_in_stock = models.PositiveSmallIntegerField(default=1, help_text='how many do you want to add?')
+    count_in_stock = models.PositiveSmallIntegerField(default=0, help_text='how many do you want to add?')
     count_booked = models.PositiveSmallIntegerField(default=0)
     count_sold = models.PositiveIntegerField(default=0)
     available_from_date = models.DateField(
@@ -214,6 +214,7 @@ class ProductItem(models.Model):
         ProductManufacturer,
         on_delete=models.PROTECT,
         blank=True,
+        null=True,
         limit_choices_to={'is_active': True}
     )
     creator = models.ForeignKey(
@@ -225,6 +226,13 @@ class ProductItem(models.Model):
     size = models.ForeignKey(ProductSize, on_delete=models.PROTECT, limit_choices_to={'is_active': True})
     color = models.ForeignKey(ProductColor, on_delete=models.PROTECT, limit_choices_to={'is_active': True})
     # -----------
+
+    main_image = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True,
+                                   help_text='This Main Image in Product')
+    image1 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
+    image2 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
+    image3 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
+    image4 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -239,6 +247,12 @@ class ProductItem(models.Model):
 
     class Meta:
         ordering = ['date_added', ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(count_in_stock__gte=models.F('count_booked')),
+                name='the number of products being booked must not exceed the number of products in stock!'
+            )
+        ]
 
     # def clean(self):
     #     errors = dict()
@@ -263,44 +277,6 @@ class ProductItem(models.Model):
     #
     #     if errors:
     #         raise ValidationError(errors)
-
-
-class ProductImage(models.Model):
-    image = models.ImageField(upload_to=upload_location_product_image, validators=[])
-    is_main = models.BooleanField(default=False)
-    product = models.ForeignKey(
-        ProductItem,
-        on_delete=models.CASCADE,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
-    )
-    creator = models.ForeignKey(
-        account_models.Staff,
-        on_delete=models.SET_NULL,
-        null=True,
-        editable=False,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
-    )
-
-    date_created = models.DateTimeField(auto_now_add=True, editable=False)
-    date_updated = models.DateTimeField(auto_now=True, editable=False)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f'{self.product}: {self.image.name}'
-
-    def active_object(self):
-        return self.is_active
-
-    class Meta:
-        verbose_name = 'Product Image'
-        verbose_name_plural = 'Product Images'
-        constraints = (
-            models.UniqueConstraint(
-                name='unique_product_main_image',
-                fields=['product'],
-                condition=models.Q(is_main=True)
-            ),
-        )
 
 
 class ProductStar(models.Model):

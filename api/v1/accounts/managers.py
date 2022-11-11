@@ -1,6 +1,5 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.apps import apps
-from django.db.models import Q
 from django.contrib.auth.hashers import make_password
 from django.contrib import auth
 
@@ -31,8 +30,8 @@ class CustomUserManager(BaseUserManager):
             first_name=first_name,
             last_name=last_name,
             email=email,
-            **extra_fields)
-
+            **extra_fields
+        )
         user.password = make_password(password)
 
         user.save(using=self._db)
@@ -53,7 +52,7 @@ class CustomUserManager(BaseUserManager):
         )
 
     def create_superuser(self, phone_number, first_name, last_name, email=None, password=None, **extra_fields):
-        role = CustomUserRole.developer.value
+        role = CustomUserRole.manager.value
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         if extra_fields.get("is_staff") is not True:
@@ -110,11 +109,6 @@ class DirectorManager(CustomUserManager):
 class ManagerManager(CustomUserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role=CustomUserRole.manager.value)
-
-
-class DeveloperManager(CustomUserManager):
-    def get_queryset(self):
-        return super().get_queryset().filter(role=CustomUserRole.developer.value)
 
 
 class VendorManager(CustomUserManager):

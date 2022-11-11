@@ -6,7 +6,6 @@ class CustomUserRole(Enum):
     client = 'client'
     vendor = 'vendor'
     director = 'director'
-    developer = 'developer'
 
     @classmethod
     def choices(cls):

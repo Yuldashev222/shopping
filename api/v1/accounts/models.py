@@ -13,7 +13,6 @@ from .managers import (
     ClientManager,
     DirectorManager,
     ManagerManager,
-    DeveloperManager,
     VendorManager,
     StaffManager,
     LeaderManager,
@@ -135,14 +134,6 @@ class Director(CustomUser):
 
 class Manager(CustomUser):
     objects = ManagerManager()
-
-    class Meta:
-        proxy = True
-        ordering = ('date_joined',)
-
-
-class Developer(CustomUser):
-    objects = DeveloperManager()
 
     class Meta:
         proxy = True

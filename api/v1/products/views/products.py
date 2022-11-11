@@ -13,7 +13,11 @@ from api.v1.products.permissions import IsStaffOrReadOnly
 class ProductAPIViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated & IsStaffOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Product.objects.all()
+        return queryset
 
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, list):
