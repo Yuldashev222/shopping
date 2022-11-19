@@ -2,11 +2,12 @@ from enum import Enum
 
 
 class DeliveryStatuses(Enum):
-    order_processing = 'order_processing'
-    pre_production = 'pre_production'
-    in_production = 'in_production'
+    order_processing = 'order processing'
+    pre_production = 'pre production'
+    in_production = 'in production'
     shipped = 'shipped'
     delivered = 'delivered'
+    failed = 'failed'
 
     @classmethod
     def choices(cls):

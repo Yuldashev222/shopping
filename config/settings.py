@@ -115,11 +115,12 @@ USE_I18N = True
 
 USE_TZ = True
 
-ADMIN_LOGIN = 'base_admin'
-ADMIN_PASSWORD = 'pbkdf2_sha256$320000$pzbSlU1ogPxybfdHPMdCBx$l/oSdW+1AaNofx65nfwM8Peg2hauUj2eF2AaHo6uwUg='
+BASE_USER_PHONE_NUMBER = '+998912345678'
+BASE_USER_EMAIL = 'super@gmail.com'
+BASE_USER_PASSWORD = 'pbkdf2_sha256$320000$Bm7c6Hdu9WXa3DAlV082fF$2j1D1ygwUfr2/m2zMF3g6YzYW3o6G7W/i5WW/TU0fhk='
 
 AUTHENTICATION_BACKENDS = [
-    'api.v1.accounts.backends.SettingsBackend',
+
     'api.v1.accounts.backends.CustomModelBackend',
 ]
 

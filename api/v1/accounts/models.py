@@ -3,7 +3,7 @@ from django.db import models
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
 from django.utils.translation import gettext_lazy as _
 
 from .services import upload_location_profile_picture
@@ -14,47 +14,44 @@ from .managers import (
     DirectorManager,
     ManagerManager,
     VendorManager,
-    StaffManager,
-    LeaderManager,
+    DeveloperManager
 )
 from .enums import CustomUserRole
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     phone_number = modelfields.PhoneNumberField(_("Phone number"), unique=True)
-    second_phone_number = modelfields.PhoneNumberField(_("Second phone number"), blank=True)
+    second_phone_number = modelfields.PhoneNumberField(_("Second phone number"), blank=True, null=True)
     email = models.EmailField(_("Email address"), unique=True)
     first_name = models.CharField(_("First name"), max_length=30)
     last_name = models.CharField(_("Last name"), max_length=50)
     date_joined = models.DateTimeField(_("Date joined"), auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(_("Date updated"), auto_now=True, editable=False)
     role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
-    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)  # last
+    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
 
     objects = CustomUserManager()
 
     EMAIL_FIELD = "email"
-    USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ['phone_number', 'first_name', 'last_name']
 
     is_staff = models.BooleanField(_("staff status"), default=False)
     is_active = models.BooleanField(_("active"), default=True)
     is_deleted = models.BooleanField(_("Is deleted"), default=False)
-    is_superuser = models.BooleanField(_("superuser status"), default=False)
 
     # second fields
     desc = models.CharField(_('Description'), blank=True, max_length=500)
-
     profile_picture = models.ImageField(
         verbose_name=_('Profile picture'),
         upload_to=upload_location_profile_picture,
         blank=True,
+        null=True,
         validators=[
-            FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
-            validate_size_profile_picture
-        ],
-        null=True
-    )
+                FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
+                validate_size_profile_picture
+            ]
+        )
 
     # address 1
     country_1 = models.CharField(max_length=15, blank=True)
@@ -79,6 +76,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.get_full_name()
 
+    class Meta:
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
+        ordering = ('date_joined', 'role')
+        constraints = (
+            models.UniqueConstraint(
+                name='unique_director_role',
+                fields=['role'],
+                condition=models.Q(role=CustomUserRole.director.value)
+            ),
+        )
+
+    def get_username(self):
+        return str(getattr(self, self.USERNAME_FIELD))
+
     def active_object(self):
         return self.is_active and not self.is_deleted
 
@@ -99,21 +111,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         """Return the short name for the user."""
         return self.first_name
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.role != CustomUserRole.client.value:
+            self.is_staff = True
+
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
-
-    class Meta:
-        verbose_name = _("User")
-        verbose_name_plural = _("Users")
-        ordering = ('date_joined', 'role')
-        constraints = (
-            models.UniqueConstraint(
-                name='unique_director_role',
-                fields=['role'],
-                condition=models.Q(role=CustomUserRole.director.value)
-            ),
-        )
 
 
 class Client(CustomUser):
@@ -123,6 +128,10 @@ class Client(CustomUser):
         proxy = True
         ordering = ('date_joined',)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.role = CustomUserRole.client.name
+
 
 class Director(CustomUser):
     objects = DirectorManager()
@@ -130,6 +139,10 @@ class Director(CustomUser):
     class Meta:
         proxy = True
         ordering = ('date_joined',)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.role = CustomUserRole.director.name
 
 
 class Manager(CustomUser):
@@ -139,6 +152,10 @@ class Manager(CustomUser):
         proxy = True
         ordering = ('date_joined',)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.role = CustomUserRole.manager.name
+
 
 class Vendor(CustomUser):
     objects = VendorManager()
@@ -147,18 +164,26 @@ class Vendor(CustomUser):
         proxy = True
         ordering = ('date_joined',)
 
-
-class Staff(CustomUser):
-    objects = StaffManager()
-
-    class Meta:
-        proxy = True
-        ordering = ('date_joined',)
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.role = CustomUserRole.vendor.name
 
 
-class Leader(CustomUser):
-    objects = LeaderManager()
+class Developer(CustomUser):
+    objects = DeveloperManager()
 
     class Meta:
         proxy = True
         ordering = ('date_joined',)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.role = CustomUserRole.developer.name
+
+
+class UserDetailOnDelete(models.Model):
+    phone_number = modelfields.PhoneNumberField(unique=True)
+    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=50)
+

@@ -1,19 +1,20 @@
 from django.db import models
 
+from api.v1.accounts.enums import CustomUserRole
 from api.v1.accounts.models import Client
-from api.v1.products.models import ProductItem
+from api.v1.products.models import Product
 
 
 class Wishlist(models.Model):
     product = models.ForeignKey(
-        ProductItem,
-        on_delete=models.CASCADE,
+        Product,
+        on_delete=models.PROTECT,
         limit_choices_to={'is_active': True, 'is_deleted': False}
     )
     client = models.ForeignKey(
         Client,
         on_delete=models.CASCADE,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        limit_choices_to={'is_active': True, 'is_deleted': False, 'role': CustomUserRole.client.name}
     )
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)

@@ -1,13 +1,7 @@
 from django.core.exceptions import ValidationError
+from datetime import datetime, date
 
 
-def active_relation(object):
-    try:
-        if not (object.is_active and object.is_deleted):
-            raise ValidationError('No active relation object')
-    except ValueError:
-        if not object.is_deleted:
-            raise ValidationError('No active relation object')
-    except ValueError:
-        if not object.is_active:
-            raise ValidationError('No active relation object')
+def validate_date(model_date):
+    if model_date <= date.today():
+        raise ValidationError('date must be greater than today date')

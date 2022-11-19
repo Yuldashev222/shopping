@@ -14,7 +14,7 @@ from api.v1.products.permissions import IsStaffOrReadOnly
 class ProductBrandAPIViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = ProductBrandSerializer
-    permission_classes = [permissions.IsAuthenticated & IsStaffOrReadOnly]
+    permission_classes = []
 
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, list):

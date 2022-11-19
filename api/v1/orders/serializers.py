@@ -6,12 +6,13 @@ from .models import Order, OrderItem
 class OrderItemSerializer(serializers.ModelSerializer):
     # order = serializers.HiddenField(default=serializers.CurrentUserDefault())
     # product_image_url = serializers.SerializerMethodField(read_only=True)
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_price = serializers.CharField(source='product.price', read_only=True)
+    # product__name = serializers.CharField(read_only=True)
+    # product__price = serializers.CharField(read_only=True)
 
     class Meta:
+        # depth = 1
         model = OrderItem
-        exclude = ['id', 'is_active', 'is_deleted', 'date_updated']
+        exclude = ['is_active', 'is_deleted', 'date_updated']
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=model.objects.all(),
@@ -22,18 +23,18 @@ class OrderItemSerializer(serializers.ModelSerializer):
         #     'order': {'write_only': True},
         # }
 
+    def to_internal_value(self, data):
+        print(data)
+        return super(OrderItemSerializer, self).to_internal_value(data)
+
     def validate_quantity(self, quantity):
         if quantity < 1:
             raise serializers.ValidationError('quantity must be at least one')
 
-    def validate(self, attrs):
-        print(attrs)
-        print()
-        print()
-        print(self)
-        # if attrs['quantity'] > attrs['product'].count_in_stock:
-        #     raise serializers.ValidationError({'quantity': 'There are not enough products in the warehouse'})
-        return attrs
+    # def validate(self, attrs):
+    #     if attrs['quantity'] > attrs['product'].count_in_stock:
+    #         raise serializers.ValidationError({'quantity': 'There are not enough products in the warehouse'})
+    #     return attrs
 
     # def get_product_image_url(self, order_item):
     #     request = self.context.get('context')

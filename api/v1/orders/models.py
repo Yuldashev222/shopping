@@ -2,22 +2,30 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
-from api.v1.accounts.models import Client
+from api.v1.accounts.models import Client, Vendor
+from api.v1.accounts.enums import CustomUserRole
 from api.v1.products.models import ProductItem
 from api.v1.delivery.models import Delivery
 from .services import upload_location_order_contract_file
 
 
 class Order(models.Model):
-    order_id = models.PositiveSmallIntegerField(verbose_name=_('ORDER ID'))
+    order_id = models.PositiveSmallIntegerField(verbose_name=_('ORDER ID'), unique=True)
     contract_file = models.FileField(upload_to=upload_location_order_contract_file, blank=True, null=True)
 
     # connections
     client = models.ForeignKey(
         Client,
         on_delete=models.PROTECT,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
-    )
+        limit_choices_to={'is_active': True, 'is_deleted': False, 'role': CustomUserRole.client.name}
+    ),
+    vendor = models.ForeignKey(
+        Vendor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'is_active': True, 'is_deleted': False, 'role': CustomUserRole.vendor.name}
+    ),
     delivery = models.ForeignKey(
         Delivery,
         on_delete=models.PROTECT,

@@ -1,17 +1,18 @@
 from django.db import models
 
-from api.v1.accounts.models import Staff
+from api.v1.accounts.models import CustomUser
 from .enums import DeliveryStatuses
 
 
 class Delivery(models.Model):
     title = models.CharField(blank=True, null=True, max_length=400)
     price = models.PositiveIntegerField(default=0, help_text='enter the price in dollars.')
-    delivery_time_in_day = models.PositiveSmallIntegerField(
+    delivery_time_in_hour = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
-        help_text='enter how many days it will be delivered!'
+        help_text='enter how many hours it will be delivered!'
     )
+    desc_for_delivery_time = models.CharField(max_length=400, blank=True, null=True)
     status = models.CharField(
         max_length=20,
         choices=DeliveryStatuses.choices(),
@@ -20,10 +21,10 @@ class Delivery(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        Staff,
+        CustomUser,
         on_delete=models.SET_NULL,
         null=True,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        limit_choices_to={'is_active': True, 'is_deleted': False, 'is_staff': True}
     )
     # -----------
 

@@ -16,14 +16,13 @@ class WishlistModelViewSet(viewsets.ModelViewSet):
     serializer_class = WishlistSerializer
     permission_classes = [rest_permissions.IsAuthenticated, IsClient, IsOwnerClient]
 
-    def filter_queryset(self, queryset):
-        queryset = queryset.filter(client_id=self.request.user.id)
-        for backend in list(self.filter_backends):
-            queryset = backend().filter_queryset(self.request, queryset, self)
+    def get_queryset(self):
+        queryset = Wishlist.objects.filter(client_id=self.request.user.id).select_related('product').all()
         return queryset
 
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, list):
+            Wishlist.objects.bulk_create()
 
             if len(request.data) > 20:
                 return response.Response(
@@ -40,6 +39,9 @@ class WishlistModelViewSet(viewsets.ModelViewSet):
 
 
 class WishlistListRetrieveAPIView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
-    queryset = Wishlist.objects.all()
     serializer_class = WishlistListRetrieveSerializer
     permission_classes = [rest_permissions.IsAuthenticated, IsStaff]
+
+    def get_queryset(self):
+        queryset = Wishlist.objects.select_related('product').all()
+        return queryset

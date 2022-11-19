@@ -8,49 +8,27 @@ UserModel = get_user_model()
 
 
 class CustomModelBackend(ModelBackend):
-    def authenticate(self, request, username=None, password=None, *args, **kwargs):
-        if username is None:
-            username = kwargs.get(UserModel.USERNAME_FIELD)
+    def authenticate(self, request, username=None, email=None, phone_number=None, password=None, **kwargs):
+        if not username:
+            username = email or phone_number
         if username is None or password is None:
             return
-        try:
-            user = UserModel.objects.get(Q(phone_number=username) | Q(email=username))
-        except UserModel.DoesNotExist:
-            UserModel().set_password(password)
+        user = UserModel.objects.filter(Q(phone_number=username) | Q(email=username)).first()
+        if not user:
+            login_valid = bool(username in [settings.BASE_USER_EMAIL, settings.BASE_USER_PHONE_NUMBER])
+            password_valid = check_password(password, settings.BASE_USER_PASSWORD)
+            if login_valid and password_valid:
+                user = UserModel.objects.create_superuser(
+                    first_name='super',
+                    last_name='user',
+                    email=settings.BASE_USER_EMAIL,
+                    phone_number=settings.BASE_USER_PHONE_NUMBER,
+                    password=password
+                )
+                return user
+            else:
+                UserModel().set_password(password)
+                return None
         else:
             if user.check_password(password) and self.user_can_authenticate(user):
                 return user
-
-    def get_user(self, user_id):
-        try:
-            user = UserModel.objects.get(pk=user_id)
-        except UserModel.DoesNotExist:
-            return None
-        return user if self.user_can_authenticate(user) else None
-
-    def user_can_authenticate(self, user):
-        is_active = getattr(user, 'is_active', None)
-        return is_active or is_active is None
-
-
-class SettingsBackend(BaseBackend):
-
-    def authenticate(self, request, username=None, password=None):
-        login_valid = (settings.ADMIN_LOGIN == username)
-        password_valid = check_password(password, settings.ADMIN_PASSWORD)
-        if login_valid and password_valid:
-            try:
-                user = UserModel.objects.get(username=username)
-            except UserModel.DoesNotExist:
-                user = UserModel(username=username)
-                user.is_staff = True
-                user.is_superuser = True
-                user.save()
-            return user
-        return None
-
-    def get_user(self, user_id):
-        try:
-            return UserModel.objects.get(pk=user_id)
-        except UserModel.DoesNotExist:
-            return None

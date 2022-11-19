@@ -25,8 +25,13 @@ class WishlistSerializer(serializers.ModelSerializer):
 
     def get_product_image_url(self, wishlist):
         request = self.context.get('context')
-        url = wishlist.product.images.filter(is_main=True)
-        return url
+        main_image = wishlist.product.images.filter(is_main=True)
+        if main_image.exists():
+            image_url = main_image.first().url
+        else:
+            image_url = wishlist.product.images.first().url
+
+        return image_url
 
 
 class WishlistListRetrieveSerializer(serializers.ModelSerializer):
