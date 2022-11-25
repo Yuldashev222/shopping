@@ -16,7 +16,10 @@ router = routers.SimpleRouter()
 
 router.register('colors', colors.ProductColorAPIViewSet)
 router.register('sizes', sizes.ProductSizeAPIViewSet)
+
+router.register('brands/dashboard', brands.ProductBrandDashboardAPIViewSet)
 router.register('brands', brands.ProductBrandAPIViewSet)
+
 router.register('categories', categories.ProductCategoryAPIViewSet)
 router.register('manufacturers', manufacturers.ProductManufacturerAPIViewSet)
 router.register('stars', stars.ProductStarAPIViewSet)

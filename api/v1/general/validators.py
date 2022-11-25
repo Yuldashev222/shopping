@@ -1,5 +1,5 @@
 from django.core.exceptions import ValidationError
-from datetime import datetime, date
+from datetime import date
 
 
 def validate_date(model_date):

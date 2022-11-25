@@ -44,5 +44,5 @@ class CreateClientSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        role = enums.CustomUserRole.client.value
+        role = enums.CustomUserRole.client.name
         return models.Client.objects.create_user(role=role, **validated_data)

@@ -12,14 +12,14 @@ class IsOwnerClient(permissions.BasePermission):
 
 class IsStaff(permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.user.role != CustomUserRole.client.value:
+        if request.user.role != CustomUserRole.client.name:
             return True
         return False
 
 
 class IsClient(permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.user.role == CustomUserRole.client.value:
+        if request.user.role == CustomUserRole.client.name:
             return True
         return False
 

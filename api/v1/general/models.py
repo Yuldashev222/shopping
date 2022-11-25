@@ -1,7 +1,8 @@
 from django.db import models
+from django.conf import settings
 
-from api.v1.accounts.enums import CustomUserRole
-from api.v1.accounts.models import Director
+from api.v1.accounts.models import CustomUser
+from api.v1.accounts.validators import is_director, active_and_not_deleted_user
 
 
 class ShopAbout(models.Model):
@@ -12,7 +13,7 @@ class ShopAbout(models.Model):
     date_updated = models.DateTimeField(auto_now=True, editable=False, null=True)
 
     creator = models.ForeignKey(
-        Director,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        limit_choices_to={'is_active': True, 'is_deleted': False, 'role': CustomUserRole.director.name},
+        validators=[active_and_not_deleted_user, is_director],
     )

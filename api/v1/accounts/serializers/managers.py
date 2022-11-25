@@ -31,5 +31,5 @@ class CreateManagerSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        role = enums.CustomUserRole.manager.value
+        role = enums.CustomUserRole.manager.name
         return models.Manager.objects.create_user(role=role, **validated_data)

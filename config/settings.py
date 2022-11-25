@@ -26,6 +26,15 @@ DEFAULT_APPS = [
     'django.contrib.staticfiles',
 ]
 
+LIBS = [
+    'rest_framework',
+    'drf_yasg',
+    'rest_framework_simplejwt.token_blacklist',
+    'taggit',
+    'phonenumber_field',
+    'multiselectfield',
+]
+
 APPS = [
     'api.v1.accounts',
     'api.v1.products',
@@ -42,15 +51,6 @@ APPS = [
     # 'api.v1.integrations.oneid',
     # 'api.v1.integrations.payments',
     # 'api.v1.integrations.sms'
-]
-
-LIBS = [
-    'rest_framework',
-    'drf_yasg',
-    'rest_framework_simplejwt.token_blacklist',
-    'taggit',
-    'phonenumber_field',
-    'multiselectfield',
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + LIBS + APPS
@@ -185,3 +185,155 @@ MEDIA_ROOT = BASE_DIR / 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+}
+
+DIRECTORS_GROUP_PERMISSIONS = {
+    'wishlists': ['delete_wishlist', 'view_wishlist'],
+
+    'accounts': [
+        'add_client', 'change_client', 'delete_client', 'view_client',
+        'change_director', 'delete_director', 'view_director',
+        'add_manager', 'change_manager', 'delete_manager', 'view_manager',
+        'add_userdetailondelete', 'change_userdetailondelete', 'delete_userdetailondelete',
+        'view_userdetailondelete', 'add_vendor', 'change_vendor', 'delete_vendor', 'view_vendor'
+    ],
+
+    'delivery': ['add_delivery', 'change_delivery', 'delete_delivery', 'view_delivery'],
+    'discounts': [
+        'add_discount', 'change_discount', 'delete_discount', 'view_discount',
+        'add_discountitem', 'change_discountitem', 'delete_discountitem', 'view_discountitem'
+    ],
+    'general': ['add_shopabout', 'change_shopabout', 'delete_shopabout', 'view_shopabout'],
+    'orders': [
+        'add_order', 'change_order', 'delete_order', 'view_order',
+        'add_orderitem', 'change_orderitem', 'delete_orderitem', 'view_orderitem'
+    ],
+    'products': [
+        'add_brand', 'change_brand', 'delete_brand', 'view_brand',
+        'add_category', 'change_category', 'delete_category', 'view_category',
+        'add_product', 'change_product', 'delete_product', 'view_product',
+        'add_productcolor', 'change_productcolor', 'delete_productcolor', 'view_productcolor',
+        'add_productcomment', 'delete_productcomment', 'view_productcomment',
+        'add_productitem', 'change_productitem', 'delete_productitem', 'view_productitem',
+        'add_productmanufacturer', 'change_productmanufacturer', 'delete_productmanufacturer',
+        'add_productsize', 'change_productsize', 'delete_productsize', 'view_productsize',
+        'delete_productstar', 'view_productstar'
+    ],
+    'taggit': [
+        'add_tag', 'change_tag', 'delete_tag', 'view_tag',
+        'add_taggeditem', 'change_taggeditem', 'delete_taggeditem', 'view_taggeditem'
+    ],
+    'token_blacklist': [
+        'view_blacklistedtoken', 'add_blacklistedtoken',
+        'change_blacklistedtoken', 'delete_blacklistedtoken',
+    ]
+}
+
+MANAGERS_GROUP_PERMISSIONS = {
+    'accounts': [
+        'add_client', 'change_client', 'delete_client', 'view_client',
+        'delete_director', 'view_director', 'change_manager', 'view_manager',
+        'add_userdetailondelete', 'change_userdetailondelete', 'delete_userdetailondelete',
+        'view_userdetailondelete', 'add_vendor', 'change_vendor', 'delete_vendor', 'view_vendor'
+    ],
+    'products': [
+        'view_productstar', 'view_brand',
+        'add_brand', 'change_brand', 'delete_brand', 'view_productmanufacturer',
+        'add_category', 'change_category', 'delete_category', 'view_category',
+        'add_product', 'change_product', 'delete_product', 'view_product',
+        'add_productcolor', 'change_productcolor', 'delete_productcolor', 'view_productcolor',
+        'add_productcomment', 'delete_productcomment', 'view_productcomment',
+        'add_productitem', 'change_productitem', 'delete_productitem', 'view_productitem',
+        'add_productmanufacturer', 'change_productmanufacturer', 'delete_productmanufacturer',
+        'add_productsize', 'change_productsize', 'delete_productsize', 'view_productsize'
+    ],
+    'discounts': [
+        'add_discount', 'change_discount', 'delete_discount', 'view_discount',
+        'add_discountitem', 'change_discountitem', 'delete_discountitem', 'view_discountitem'
+    ],
+    'delivery': ['add_delivery', 'change_delivery', 'delete_delivery', 'view_delivery'],
+    'wishlists': ['delete_wishlist', 'view_wishlist'],
+    'general': ['view_shopabout'],
+    'orders': [
+        'add_order', 'change_order', 'delete_order', 'view_order',
+        'add_orderitem', 'change_orderitem', 'delete_orderitem', 'view_orderitem'
+    ],
+    'token_blacklist': [
+        'view_blacklistedtoken', 'delete_blacklistedtoken',
+        'add_blacklistedtoken', 'change_blacklistedtoken'
+    ],
+    'taggit': [
+        'add_tag', 'change_tag', 'delete_tag', 'view_tag',
+        'add_taggeditem', 'change_taggeditem', 'delete_taggeditem', 'view_taggeditem'
+    ],
+}
+
+VENDORS_GROUP_PERMISSIONS = {
+    'accounts': [
+        'add_client', 'change_client', 'view_client', 'change_userdetailondelete',
+        'delete_director', 'view_director', 'view_manager', 'add_userdetailondelete',
+        'view_userdetailondelete', 'view_vendor'
+    ],
+    'products': [
+        'view_productstar', 'view_product', 'add_brand', 'change_brand',
+        'add_category', 'change_category', 'view_category', 'add_product', 'change_product',
+        'add_productcolor', 'change_productcolor', 'delete_productcolor', 'view_productcolor',
+        'add_productcomment', 'delete_productcomment', 'view_productcomment', 'view_brand',
+        'add_productitem', 'change_productitem', 'view_productitem',
+        'add_productmanufacturer', 'change_productmanufacturer', 'view_productmanufacturer',
+        'add_productsize', 'change_productsize', 'delete_productsize', 'view_productsize'
+    ],
+    'discounts': ['view_discount', 'view_discountitem'],
+    'delivery': ['add_delivery', 'change_delivery', 'view_delivery'],
+    'wishlists': ['delete_wishlist', 'view_wishlist'],
+    'general': ['view_shopabout'],
+    'orders': [
+        'add_order', 'change_order', 'view_order',
+        'add_orderitem', 'change_orderitem', 'view_orderitem',
+    ],
+    'token_blacklist': ['view_blacklistedtoken'],
+    'taggit': [
+        'add_tag', 'change_tag', 'delete_tag', 'view_tag',
+        'add_taggeditem', 'change_taggeditem', 'delete_taggeditem', 'view_taggeditem'
+    ],
+}
+
+CLIENTS_GROUP_PERMISSIONS = {
+    'delivery': ['view_delivery'],
+    'general': ['view_shopabout'],
+    'taggit': ['view_tag', 'view_taggeditem'],
+    'discounts': ['view_discount', 'view_discountitem'],
+    'wishlists': ['add_wishlist', 'change_wishlist', 'delete_wishlist', 'view_wishlist'],
+    'accounts': ['change_client', 'delete_client', 'view_client', 'view_director', 'view_manager', 'view_vendor'],
+
+    'products': [
+        'view_productcomment', 'view_productsize', 'delete_productstar',
+        'view_brand', 'view_category', 'view_product',
+        'add_productcomment', 'change_productcomment', 'delete_productcomment',
+        'view_productcolor', 'view_productitem', 'view_productmanufacturer',
+        'view_productstar', 'add_productstar', 'change_productstar'
+    ],
+
+    'orders': [
+        'add_order', 'change_order', 'delete_order', 'view_order',
+        'add_orderitem', 'change_orderitem', 'delete_orderitem', 'view_orderitem'
+    ],
+}
+
+USER_GROUP_PERMISSIONS_LIST = [
+    ['directors', DIRECTORS_GROUP_PERMISSIONS],
+    ['managers', MANAGERS_GROUP_PERMISSIONS],
+    ['vendors', VENDORS_GROUP_PERMISSIONS],
+    ['clients', CLIENTS_GROUP_PERMISSIONS]
+]

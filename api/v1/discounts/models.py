@@ -1,13 +1,17 @@
 from datetime import date
 from django.db import models
+from django.conf import settings
 from django.core.exceptions import ValidationError
 
-from api.v1.accounts.models import CustomUser
+from api.v1.accounts.models import UserDetailOnDelete
 from api.v1.products.models import ProductItem, Product
-from api.v1.accounts.validators import leader_user
+from api.v1.products.validators import active_and_not_deleted_product_item, active_and_not_deleted_product
+from api.v1.accounts.validators import is_manager_or_director, active_and_not_deleted_user
+from api.v1.general.validators import validate_date
+from api.v1.discounts.validators import active_and_not_deleted_discount
+
 from .enums import DiscountType
 from .services import upload_location_discount_file, upload_location_discount_image
-from api.v1.general.validators import validate_date
 
 
 class Discount(models.Model):
@@ -18,6 +22,8 @@ class Discount(models.Model):
     end_date = models.DateField(blank=True, null=True, validators=[validate_date])
     per_client_limit = models.PositiveSmallIntegerField(blank=True, null=True)
     discount_quantity = models.PositiveIntegerField(blank=True, null=True)
+    remaining_discount_quantity = models.PositiveIntegerField(blank=True, null=True)
+    for_all_product = models.BooleanField(default=False)
 
     # additional fields
     file = models.FileField(upload_to=upload_location_discount_file, blank=True, null=True)
@@ -25,31 +31,32 @@ class Discount(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        CustomUser,
-        on_delete=models.SET_NULL,
-        null=True,
-        validators=[leader_user],
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, validators=[active_and_not_deleted_user, is_manager_or_director],
+    )
+    creator_detail_on_delete = models.ForeignKey(
+        UserDetailOnDelete,
+        on_delete=models.PROTECT,
+        blank=True, null=True
     )
     # -----------
 
     # discount types
-    # 1 - discount price example: -10$, 20$, ...
+    # 1 - discount price example: -10$, -20$, ...
     price = models.PositiveIntegerField(blank=True, null=True)
 
     # 2 - discount percent example: -10%, -20%, ...
     percent = models.PositiveIntegerField(blank=True, null=True)
 
-    # 3 - Buy n items and get the (n + 1)th free!
-    quantity_to_free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
-    free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
-
-    # 4 - free delivery service
+    # 3 - free delivery service
     free_delivery = models.BooleanField(default=False)
 
-    # 5 - if you make a minimum purchase of 100 dollars, you will get one of the 4 discounts above
+    # 4 - if you make a minimum purchase of 100 dollars, you will get one of the 3 discounts above
     minimum_purchase = models.PositiveIntegerField(blank=True, null=True)
 
+    # 5 - Buy n items and get the (n + 1)th free!
+    quantity_to_free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
+    free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
     # --------------------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -63,6 +70,16 @@ class Discount(models.Model):
     def clean(self):
         errors = dict()
 
+        if self.creator and self.creator_detail_on_delete:
+            raise ValidationError({'creator_detail_on_delete': 'cannot be this field when the "creator" field exists'})
+
+        if self.for_all_product and self.discount_quantity or self.remaining_discount_quantity:
+            raise ValidationError('the "for_all_product" following two fields "discount_quantity",'
+                                  ' "remaining_discount_quantity" must not exist when this field is present')
+
+        if self.discount_quantity and not self.remaining_discount_quantity:
+            raise ValidationError({'remaining_discount_quantity': 'this is a required field'})
+
         if self.end_date and not self.start_date:
             self.start_date = date.today()
 
@@ -71,6 +88,15 @@ class Discount(models.Model):
                 errors['end_date'] = ['end_date must be greater than today date']
             if self.end_date <= self.start_date:
                 errors['end_date'] = ['end_date must be greater than start_date']
+
+        if (
+                self.quantity_to_free_quantity and not self.free_quantity or
+                not self.free_quantity and self.quantity_to_free_quantity
+        ):
+            raise ValidationError(
+                {'quantity_to_free_quantity': '"free_quantity" field not null',
+                 'free_quantity': '"quantity_to_free_quantity" field not null'}
+            )
 
         if (
                 (self.discount_type == DiscountType.price.name) and
@@ -117,17 +143,23 @@ class Discount(models.Model):
             raise ValidationError(
                 {'free_delivery': 'select only the "free_delivery" field if the type is "free_delivery"'})
 
-        if (
-                (self.discount_type == DiscountType.minimum_purchase.name) and
-                (
-                        self.price or
-                        self.percent or
-                        self.quantity_to_free_quantity or
-                        self.free_delivery
-                )
-        ):
-            raise ValidationError(
-                {'minimum_purchase': 'select only the "minimum_purchase" field if the type is "minimum_purchase"'})
+        if self.discount_type == DiscountType.minimum_purchase.name:
+            if self.quantity_to_free_quantity:
+                raise ValidationError(
+                    {'quantity_to_free_quantity': 'for the "minimum_purchase" field. '
+                                                  'The "quantity_to_free_quantity" field must be empty'})
+
+            if self.free_delivery and self.price and self.percent:
+                raise ValidationError('Choose one of the 3 fields: "free_delivery", "price", "percent"')
+
+            if self.price and self.percent:
+                raise ValidationError('Choose one of the 2 fields: "price", "percent"')
+
+            if self.free_delivery and self.percent:
+                raise ValidationError('Choose one of the 2 fields: "free_delivery", "percent"')
+
+            if self.free_delivery and self.price:
+                raise ValidationError('Choose one of the 2 fields: "free_delivery", "price"')
 
     def active_object(self):
         return self.is_active and not self.is_deleted
@@ -138,30 +170,27 @@ class DiscountItem(models.Model):
 
     # connections
     discount = models.ForeignKey(
-        Discount,
-        models.PROTECT,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        Discount, models.PROTECT,
+        validators=[active_and_not_deleted_discount]
     )
     product_item = models.ForeignKey(
-        ProductItem,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        ProductItem, on_delete=models.CASCADE,
+        blank=True, null=True,
+        validators=[active_and_not_deleted_product_item]
     )
     product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        Product, on_delete=models.CASCADE,
+        blank=True, null=True,
+        validators=[active_and_not_deleted_product]
     )
     adder = models.ForeignKey(
-        CustomUser,
-        on_delete=models.SET_NULL,
-        null=True,
-        validators=[leader_user],
-        limit_choices_to={'is_active': True, 'is_deleted': False}
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, validators=[active_and_not_deleted_user, is_manager_or_director],
+    )
+    adder_detail_on_delete = models.ForeignKey(
+        UserDetailOnDelete,
+        on_delete=models.PROTECT,
+        blank=True, null=True
     )
     # -----------
 
@@ -175,15 +204,32 @@ class DiscountItem(models.Model):
             return f'{self.product}: to discount {self.discount}'
         return f'{self.product_item}: to discount {self.discount}'
 
+    class Meta:
+        unique_together = [['discount', 'product'], ['discount', 'product_item']]  # last
+
     def clean(self):
+
+        if self.adder and self.adder_detail_on_delete:
+            raise ValidationError({'adder_detail_on_delete': 'cannot be this field when the "adder" field exists'})
+
+        if self.discount.for_all_product:
+            raise ValidationError({'This discount is valid for all products'})
+
+        if self.discount.end_date and self.discount.end_date < date.today():
+            raise ValidationError({'discount': 'this promotion has expired!'})
+
+        if (
+                self.quantity and
+                self.discount.remaining_discount_quantity and
+                self.quantity > self.discount.remaining_discount_quantity
+        ):
+            raise ValidationError({'quantity': 'more than the specified discount quantity'})
+
         if self.product_item and self.product:
             raise ValidationError('product and product item choose one of the two')
 
         if not (self.product_item or self.product):
             raise ValidationError('it is mandatory to choose one of the two')
-
-    class Meta:
-        unique_together = [['discount', 'product'], ['discount', 'product_item']]  # last
 
     def active_object(self):
         return self.is_active and not self.is_deleted

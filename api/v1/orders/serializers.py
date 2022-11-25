@@ -24,7 +24,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         # }
 
     def to_internal_value(self, data):
-        print(data)
         return super(OrderItemSerializer, self).to_internal_value(data)
 
     def validate_quantity(self, quantity):

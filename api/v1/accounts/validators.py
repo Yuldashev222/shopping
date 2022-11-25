@@ -1,4 +1,5 @@
 from django.core.validators import ValidationError
+from django.contrib.auth import get_user_model
 
 from .enums import CustomUserRole
 
@@ -12,6 +13,43 @@ def validate_size_profile_picture(picture):
         raise ValidationError(f'maximum picture size: {size_limit}mb')
 
 
-def leader_user(user):
-    if user.role not in [CustomUserRole.manager.name, CustomUserRole.director.name]:
-        raise ValidationError('user role must be director or manager')
+def is_manager(user_id):
+    user = get_user_model().objects.get(pk=user_id)
+    if user.role != CustomUserRole.manager.name:
+        raise ValidationError('user role must be manager')
+
+
+def is_staff(user_id):
+    user = get_user_model().objects.get(pk=user_id)
+    if user.role == CustomUserRole.client.name:
+        raise ValidationError('user must be an staff')
+
+
+def is_client(user_id):
+    user = get_user_model().objects.get(pk=user_id)
+    if user.role != CustomUserRole.client.name:
+        raise ValidationError('user must be an client')
+
+
+def is_vendor(user_id):
+    user = get_user_model().objects.get(pk=user_id)
+    if user.role != CustomUserRole.vendor.name:
+        raise ValidationError('user must be an vendor')
+
+
+def is_director(user_id):
+    user = get_user_model().objects.get(pk=user_id)
+    if user.role != CustomUserRole.director.name:
+        raise ValidationError('user must be an director')
+
+
+def is_manager_or_director(user_id):
+    user_role = get_user_model().objects.get(pk=user_id).role
+    if user_role not in [CustomUserRole.director.name, CustomUserRole.manager.name, CustomUserRole.developer.name]:
+        raise ValidationError('user must be an director')
+
+
+def active_and_not_deleted_user(user_id):
+    user = get_user_model().objects.get(pk=user_id)
+    if not user.is_active or user.is_deleted:
+        raise ValidationError('object is not active')

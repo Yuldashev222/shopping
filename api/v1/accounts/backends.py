@@ -12,7 +12,7 @@ class CustomModelBackend(ModelBackend):
         if not username:
             username = email or phone_number
         if username is None or password is None:
-            return
+            return None
         user = UserModel.objects.filter(Q(phone_number=username) | Q(email=username)).first()
         if not user:
             login_valid = bool(username in [settings.BASE_USER_EMAIL, settings.BASE_USER_PHONE_NUMBER])

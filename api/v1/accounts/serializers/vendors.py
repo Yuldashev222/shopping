@@ -31,5 +31,5 @@ class CreateVendorSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        role = enums.CustomUserRole.vendor.value
+        role = enums.CustomUserRole.vendor.name
         return models.Vendor.objects.create_user(role=role, **validated_data)

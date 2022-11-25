@@ -3,11 +3,9 @@ from django.db import models
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser, Group, Permission
 from django.utils.translation import gettext_lazy as _
 
-from .services import upload_location_profile_picture
-from .validators import validate_size_profile_picture
 from .managers import (
     CustomUserManager,
     ClientManager,
@@ -16,6 +14,8 @@ from .managers import (
     VendorManager,
     DeveloperManager
 )
+from .services import upload_location_profile_picture
+from .validators import validate_size_profile_picture, is_manager_or_director, active_and_not_deleted_user
 from .enums import CustomUserRole
 
 
@@ -28,7 +28,18 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(_("Date joined"), auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(_("Date updated"), auto_now=True, editable=False)
     role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
-    creator = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
+
+    # connections
+    creator = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        validators=[is_manager_or_director, active_and_not_deleted_user]
+    )
+    creator_detail_on_delete = models.ForeignKey(
+        'UserDetailOnDelete',
+        on_delete=models.PROTECT,
+        blank=True, null=True
+    )
+    # ----------
 
     objects = CustomUserManager()
 
@@ -48,10 +59,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         blank=True,
         null=True,
         validators=[
-                FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
-                validate_size_profile_picture
-            ]
-        )
+            FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
+            validate_size_profile_picture
+        ]
+    )
 
     # address 1
     country_1 = models.CharField(max_length=15, blank=True)
@@ -74,7 +85,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     # card 1
 
     def __str__(self):
-        return self.get_full_name()
+        return f'{self.role}: {self.phone_number}'
 
     class Meta:
         verbose_name = _("User")
@@ -84,7 +95,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             models.UniqueConstraint(
                 name='unique_director_role',
                 fields=['role'],
-                condition=models.Q(role=CustomUserRole.director.value)
+                condition=models.Q(role=CustomUserRole.director.name)
             ),
         )
 
@@ -96,6 +107,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def clean(self):
         errors = dict()
+
+        if self.role != CustomUserRole.client.name and not self.creator:
+            raise ValidationError({'creator': 'This field is required'})
+
+        if self.role == CustomUserRole.manager.name and self.creator.role != CustomUserRole.director.name:
+            raise ValidationError({'creator': 'only the director can add managers!'})
+
+        if self.creator and self.creator_detail_on_delete:
+            raise ValidationError(
+                {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
+            )
 
         if self.phone_number == self.second_phone_number:
             errors['phone_numbers'] = ['first and second phone numbers already exists.']
@@ -113,12 +135,38 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if self.role != CustomUserRole.client.value:
+        if self.role != CustomUserRole.client.name:
             self.is_staff = True
+        else:
+            self.is_staff = False
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+
+class UserDetailOnDelete(models.Model):
+    phone_number = modelfields.PhoneNumberField()
+    email = models.EmailField()
+    role = models.CharField(max_length=9, choices=CustomUserRole.choices())
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=50)
+    is_staff = models.BooleanField(default=False)
+
+    date_joined = models.DateTimeField()
+    date_deleted = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def __str__(self):
+        return f'{self.phone_number}'
+
+    def save(self, *args, **kwargs):
+        if self.role != CustomUserRole.client.name:
+            self.is_staff = True
+        super(UserDetailOnDelete, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Deleted User Detail'
+        verbose_name_plural = 'Users detail on delete'
 
 
 class Client(CustomUser):
@@ -179,11 +227,3 @@ class Developer(CustomUser):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.role = CustomUserRole.developer.name
-
-
-class UserDetailOnDelete(models.Model):
-    phone_number = modelfields.PhoneNumberField(unique=True)
-    email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=50)
-

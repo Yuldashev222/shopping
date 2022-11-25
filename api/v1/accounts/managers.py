@@ -1,12 +1,13 @@
 from django.contrib.auth.models import UserManager
 from django.contrib.auth.hashers import make_password
-from django.db.models import Q
+from django.contrib.auth.models import Group, Permission
+
 from .enums import CustomUserRole
 
 
 class CustomUserManager(UserManager):
     use_in_migrations = True
-
+    
     def _create_user(self, phone_number, role, first_name, last_name, email, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("The given phone number must be set")
@@ -27,9 +28,7 @@ class CustomUserManager(UserManager):
             **extra_fields
         )
         user.password = make_password(password)
-
         user.save(using=self._db)
-
         return user
 
     def create_user(self, **extra_fields):
