@@ -7,7 +7,7 @@ from .enums import CustomUserRole
 
 class CustomUserManager(UserManager):
     use_in_migrations = True
-    
+
     def _create_user(self, phone_number, role, first_name, last_name, email, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("The given phone number must be set")

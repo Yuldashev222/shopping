@@ -3,5 +3,5 @@ from datetime import date
 
 
 def validate_date(model_date):
-    if model_date <= date.today():
+    if model_date < date.today():
         raise ValidationError('date must be greater than today date')

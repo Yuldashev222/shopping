@@ -3,13 +3,13 @@ from django.conf import settings
 
 from api.v1.accounts.validators import is_client, active_and_not_deleted_user
 from api.v1.accounts.models import Client
-from api.v1.products.models import Product
+from api.v1.products.models import ProductItem
 from api.v1.products.validators import active_and_not_deleted_product
 
 
 class Wishlist(models.Model):
-    product = models.ForeignKey(
-        Product, on_delete=models.PROTECT,
+    product_item = models.ForeignKey(
+        ProductItem, on_delete=models.PROTECT,
         validators=[active_and_not_deleted_product],
     )
     client = models.ForeignKey(
@@ -20,12 +20,12 @@ class Wishlist(models.Model):
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
 
     def __str__(self):
-        return f'{self.client}: {self.product}'
+        return f'{self.client}: {self.product_item}'
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['client', 'product'],
+                fields=['client', 'product_item'],
                 name='client_product_unique_wishlist'
             )
         ]

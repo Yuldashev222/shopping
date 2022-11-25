@@ -1,24 +1,29 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 from django.conf import settings
 from api.v1.accounts.models import UserDetailOnDelete
 from api.v1.accounts.validators import is_staff, active_and_not_deleted_user
 
 from .enums import DeliveryStatuses
+from .services import upload_location_delivery_file, upload_location_delivery_image
 
 
 class Delivery(models.Model):
     title = models.CharField(blank=True, null=True, max_length=400)
     price = models.PositiveIntegerField(default=0, help_text='enter the price in dollars.')
-    delivery_time_in_hour = models.PositiveSmallIntegerField(
-        help_text='enter how many hours it will be delivered!'
+    delivery_time_in_hour = models.FloatField(
+        help_text='enter how many hours it will be delivered!',
+        validators=[MinValueValidator(0.5)]
     )
     desc_for_delivery_time = models.CharField(max_length=400, blank=True, null=True)
     status = models.CharField(
         max_length=20, choices=DeliveryStatuses.choices(),
         default=DeliveryStatuses.order_processing.name,
     )
+    file = models.FileField(upload_to=upload_location_delivery_file, blank=True, null=True)
+    image = models.ImageField(upload_to=upload_location_delivery_image, blank=True, null=True)
 
     # connections
     creator = models.ForeignKey(

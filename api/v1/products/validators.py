@@ -8,7 +8,7 @@ from . import models as product_models
 COLOR_HEXA_RE = re_compile("#([A-Fa-f0-9]{8}|[A-Fa-f0-9]{4})$")
 validate_color_hexa = RegexValidator(
     COLOR_HEXA_RE,
-    _("Enter a valid hexa color, eg. #00000000"), "invalid"
+    _("Enter a valid hexa color, eg. #FFFFFF00"), "invalid"
 )
 
 

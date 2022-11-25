@@ -36,14 +36,14 @@ LIBS = [
 ]
 
 APPS = [
-    'api.v1.accounts',
-    'api.v1.products',
-    'api.v1.orders',
-    'api.v1.wishlists',
-    'api.v1.discounts',
-    'api.v1.general',
-    'api.v1.delivery',
-    'api.v1.advertisements',
+    'api.v1.accounts.apps.AccountsConfig',
+    'api.v1.products.apps.ProductsConfig',
+    'api.v1.orders.apps.OrdersConfig',
+    'api.v1.wishlists.apps.WishlistsConfig',
+    'api.v1.discounts.apps.DiscountsConfig',
+    'api.v1.general.apps.MainConfig',
+    'api.v1.delivery.apps.DeliveryConfig',
+    'api.v1.advertisements.apps.AdvertisementsConfig',
 
     # integration apps
     # 'api.v1.integrations.mail',
@@ -198,7 +198,7 @@ SWAGGER_SETTINGS = {
     'JSON_EDITOR': True,
 }
 
-DIRECTORS_GROUP_PERMISSIONS = {
+DIRECTOR_GROUP_PERMISSIONS = {
     'wishlists': ['delete_wishlist', 'view_wishlist'],
 
     'accounts': [
@@ -240,7 +240,7 @@ DIRECTORS_GROUP_PERMISSIONS = {
     ]
 }
 
-MANAGERS_GROUP_PERMISSIONS = {
+MANAGER_GROUP_PERMISSIONS = {
     'accounts': [
         'add_client', 'change_client', 'delete_client', 'view_client',
         'delete_director', 'view_director', 'change_manager', 'view_manager',
@@ -279,7 +279,7 @@ MANAGERS_GROUP_PERMISSIONS = {
     ],
 }
 
-VENDORS_GROUP_PERMISSIONS = {
+VENDOR_GROUP_PERMISSIONS = {
     'accounts': [
         'add_client', 'change_client', 'view_client', 'change_userdetailondelete',
         'delete_director', 'view_director', 'view_manager', 'add_userdetailondelete',
@@ -309,7 +309,7 @@ VENDORS_GROUP_PERMISSIONS = {
     ],
 }
 
-CLIENTS_GROUP_PERMISSIONS = {
+CLIENT_GROUP_PERMISSIONS = {
     'delivery': ['view_delivery'],
     'general': ['view_shopabout'],
     'taggit': ['view_tag', 'view_taggeditem'],
@@ -331,9 +331,9 @@ CLIENTS_GROUP_PERMISSIONS = {
     ],
 }
 
-USER_GROUP_PERMISSIONS_LIST = [
-    ['directors', DIRECTORS_GROUP_PERMISSIONS],
-    ['managers', MANAGERS_GROUP_PERMISSIONS],
-    ['vendors', VENDORS_GROUP_PERMISSIONS],
-    ['clients', CLIENTS_GROUP_PERMISSIONS]
-]
+USER_GROUP_PERMISSIONS = {
+    'directors': DIRECTOR_GROUP_PERMISSIONS,
+    'managers': MANAGER_GROUP_PERMISSIONS,
+    'vendors': VENDOR_GROUP_PERMISSIONS,
+    'clients': CLIENT_GROUP_PERMISSIONS
+}

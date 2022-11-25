@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 from api.v1.accounts.models import UserDetailOnDelete
 from api.v1.products.models import ProductItem
@@ -17,10 +18,12 @@ from .validators import not_confirmed
 
 
 class Order(models.Model):
-    order_id = models.PositiveSmallIntegerField(verbose_name=_('ORDER ID'), unique=True)
+    order_id = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1)], verbose_name=_('ORDER ID'), unique=True
+    )
     desc = models.TextField(max_length=1000, blank=True, null=True)
     contract_file = models.FileField(upload_to=upload_location_order_contract_file, blank=True, null=True)
-    is_confirmed = models.BooleanField(default=True)
+    is_confirmed = models.BooleanField(default=False)  # last
 
     # connections
     client = models.ForeignKey(
@@ -40,10 +43,9 @@ class Order(models.Model):
         blank=True, null=True, related_name='vendor_orders'
     )
     delivery = models.ForeignKey(
-        Delivery, on_delete=models.PROTECT,
-        blank=True, null=True,
+        Delivery, on_delete=models.PROTECT, blank=True, null=True,
         validators=[active_and_not_deleted_delivery],
-    )
+    )  # last
     # -----------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -66,7 +68,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    quantity = models.PositiveSmallIntegerField(default=1)
+    quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)], default=1)
 
     # connections
     order = models.ForeignKey(

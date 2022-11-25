@@ -12,9 +12,13 @@ class ProductDepartments(Enum):
 
 class ProductStars(Enum):
     one = 1
+    one_half = 1.5
     two = 2
+    two_half = 2.5
     three = 3
+    three_half = 3.5
     four = 4
+    four_half = 4.5
     five = 5
 
     @classmethod

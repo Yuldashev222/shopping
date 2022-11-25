@@ -2,6 +2,7 @@ from datetime import date
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 from api.v1.accounts.models import UserDetailOnDelete
 from api.v1.products.models import ProductItem, Product
@@ -20,8 +21,8 @@ class Discount(models.Model):
     discount_type = models.CharField(max_length=20, choices=DiscountType.choices())
     start_date = models.DateField(blank=True, null=True, validators=[validate_date])
     end_date = models.DateField(blank=True, null=True, validators=[validate_date])
-    per_client_limit = models.PositiveSmallIntegerField(blank=True, null=True)
-    discount_quantity = models.PositiveIntegerField(blank=True, null=True)
+    per_client_limit = models.PositiveSmallIntegerField(blank=True, null=True, validators=[MinValueValidator(1)])
+    discount_quantity = models.PositiveIntegerField(blank=True, null=True, validators=[MinValueValidator(1)])
     remaining_discount_quantity = models.PositiveIntegerField(blank=True, null=True)
     for_all_product = models.BooleanField(default=False)
 
@@ -31,32 +32,33 @@ class Discount(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, validators=[active_and_not_deleted_user, is_manager_or_director],
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        validators=[active_and_not_deleted_user, is_manager_or_director],
     )
     creator_detail_on_delete = models.ForeignKey(
-        UserDetailOnDelete,
-        on_delete=models.PROTECT,
+        UserDetailOnDelete, on_delete=models.PROTECT,
         blank=True, null=True
     )
     # -----------
 
     # discount types
     # 1 - discount price example: -10$, -20$, ...
-    price = models.PositiveIntegerField(blank=True, null=True)
+    price = models.FloatField(validators=[MinValueValidator(0.1)], blank=True, null=True)
 
     # 2 - discount percent example: -10%, -20%, ...
-    percent = models.PositiveIntegerField(blank=True, null=True)
+    percent = models.FloatField(validators=[MinValueValidator(0.1)], blank=True, null=True)
 
     # 3 - free delivery service
     free_delivery = models.BooleanField(default=False)
 
     # 4 - if you make a minimum purchase of 100 dollars, you will get one of the 3 discounts above
-    minimum_purchase = models.PositiveIntegerField(blank=True, null=True)
+    minimum_purchase = models.FloatField(validators=[MinValueValidator(1)], blank=True, null=True)
 
     # 5 - Buy n items and get the (n + 1)th free!
-    quantity_to_free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
-    free_quantity = models.PositiveSmallIntegerField(blank=True, null=True)
+    quantity_to_free_quantity = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1)], blank=True, null=True
+    )
+    free_quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
     # --------------------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -65,7 +67,7 @@ class Discount(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.discount_type) + str(self.title)[:15]
+        return f'{self.discount_type}: {self.title[:25]}'
 
     def clean(self):
         errors = dict()
@@ -79,15 +81,15 @@ class Discount(models.Model):
 
         if self.discount_quantity and not self.remaining_discount_quantity:
             raise ValidationError({'remaining_discount_quantity': 'this is a required field'})
+        
+        if self.end_date and self.end_date <= date.today():
+            errors['end_date'] = ['"date" must be greater than today\'s date!']
 
         if self.end_date and not self.start_date:
             self.start_date = date.today()
 
-        if self.start_date and self.end_date:
-            if self.end_date <= date.today():
-                errors['end_date'] = ['end_date must be greater than today date']
-            if self.end_date <= self.start_date:
-                errors['end_date'] = ['end_date must be greater than start_date']
+        if self.start_date and self.end_date and self.end_date <= self.start_date:
+            errors['end_date'] = ['end_date must be greater than start_date']
 
         if (
                 self.quantity_to_free_quantity and not self.free_quantity or
@@ -166,21 +168,16 @@ class Discount(models.Model):
 
 
 class DiscountItem(models.Model):
-    quantity = models.PositiveSmallIntegerField(blank=True, null=True)
+    quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
 
     # connections
-    discount = models.ForeignKey(
-        Discount, models.PROTECT,
-        validators=[active_and_not_deleted_discount]
-    )
+    discount = models.ForeignKey(Discount, models.PROTECT, validators=[active_and_not_deleted_discount])
     product_item = models.ForeignKey(
-        ProductItem, on_delete=models.CASCADE,
-        blank=True, null=True,
+        ProductItem, on_delete=models.CASCADE, blank=True, null=True,
         validators=[active_and_not_deleted_product_item]
     )
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE,
-        blank=True, null=True,
+        Product, on_delete=models.CASCADE, blank=True, null=True,
         validators=[active_and_not_deleted_product]
     )
     adder = models.ForeignKey(

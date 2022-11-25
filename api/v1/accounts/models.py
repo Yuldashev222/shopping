@@ -54,10 +54,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     # second fields
     desc = models.CharField(_('Description'), blank=True, max_length=500)
     profile_picture = models.ImageField(
-        verbose_name=_('Profile picture'),
+        verbose_name=_('Profile picture'), blank=True, null=True,
         upload_to=upload_location_profile_picture,
-        blank=True,
-        null=True,
         validators=[
             FileExtensionValidator(allowed_extensions=['jpg', 'png', 'jpeg', 'svg']),
             validate_size_profile_picture

@@ -1,11 +1,14 @@
+from datetime import date
 from django.db import models
 from django.conf import settings
 from taggit.managers import TaggableManager
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 from api.v1.accounts import models as account_models
 from api.v1.accounts.validators import is_staff, active_and_not_deleted_user
 from api.v1.delivery.models import Delivery
+from api.v1.general.validators import validate_date
 from api.v1.delivery.validators import active_and_not_deleted_delivery
 from api.v1.products.validators import (
     active_category,
@@ -29,8 +32,7 @@ class ProductColor(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
 
@@ -41,8 +43,8 @@ class ProductColor(models.Model):
         return self.is_active
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower().strip()
         super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
 
     class Meta:
         ordering = ('name',)
@@ -55,8 +57,7 @@ class ProductSize(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
 
@@ -67,8 +68,8 @@ class ProductSize(models.Model):
         return self.is_active
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower().strip()
         super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
 
     class Meta:
         ordering = ('name',)
@@ -79,14 +80,12 @@ class Brand(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
     creator_detail_on_delete = models.ForeignKey(
         account_models.UserDetailOnDelete,
-        on_delete=models.PROTECT,
-        blank=True, null=True
+        on_delete=models.PROTECT, blank=True, null=True
     )
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -106,8 +105,8 @@ class Brand(models.Model):
         return self.is_active
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower().strip()
         super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
 
     class Meta:
         ordering = ('name',)
@@ -118,20 +117,16 @@ class Category(models.Model):
 
     # connections
     parent = models.ForeignKey(
-        'self', on_delete=models.PROTECT,
-        blank=True, null=True,
+        'self', on_delete=models.PROTECT, blank=True, null=True,
         validators=[active_category],
     )
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
     creator_detail_on_delete = models.ForeignKey(
         account_models.UserDetailOnDelete,
-        on_delete=models.PROTECT,
-        blank=True, null=True
+        on_delete=models.PROTECT, blank=True, null=True
     )
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -155,8 +150,8 @@ class Category(models.Model):
         return self.is_active
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower().strip()
         super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
 
     class Meta:
         ordering = ('name',)
@@ -184,8 +179,8 @@ class ProductManufacturer(models.Model):
         return self.is_active
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower().strip()
         super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
 
     class Meta:
         ordering = ('name',)
@@ -198,17 +193,14 @@ class Product(models.Model):
 
     # connections
     category = models.ForeignKey(
-        Category, on_delete=models.SET_NULL,
-        null=True, validators=[active_category]
+        Category, on_delete=models.PROTECT, validators=[active_category]
     )
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
     creator_detail_on_delete = models.ForeignKey(
-        account_models.UserDetailOnDelete,
-        on_delete=models.PROTECT,
+        account_models.UserDetailOnDelete, on_delete=models.PROTECT,
         blank=True, null=True
     )
     # -----------
@@ -231,57 +223,49 @@ class Product(models.Model):
         return self.is_active and not self.is_deleted
 
     def save(self, *args, **kwargs):
-        self.name = self.name.lower().strip()
         super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
 
 
 class ProductItem(models.Model):
     name = models.CharField(max_length=400, blank=True, null=True)
     desc = models.TextField(max_length=1500, blank=True, null=True)
-    price = models.DecimalField(max_digits=25, decimal_places=3)
+    price = models.FloatField(validators=[MinValueValidator(0.1)])
     department = models.CharField(max_length=1, choices=ProductDepartments.choices())
     count_in_stock = models.PositiveSmallIntegerField(default=0, help_text='how many do you want to add?')
     count_booked = models.PositiveSmallIntegerField(default=0)
     count_sold = models.PositiveIntegerField(default=0)
     available_from_date = models.DateField(
+        validators=[validate_date],
         blank=True, null=True,
         help_text='from what date the product is available',
     )
     available_to_date = models.DateField(
+        validators=[validate_date],
         blank=True, null=True,
         help_text='until when is the product available',
     )
     tags = TaggableManager(blank=True)
 
     # connections
-    delivery = models.ForeignKey(
-        Delivery, on_delete=models.PROTECT,
-        blank=True, null=True,
-        validators=[active_and_not_deleted_delivery]
-    )
     product = models.ForeignKey(
         Product, on_delete=models.PROTECT,
         validators=[active_and_not_deleted_product],
     )
     brand = models.ForeignKey(
-        Brand, on_delete=models.PROTECT,
-        null=True, blank=True,
+        Brand, on_delete=models.PROTECT, null=True, blank=True,
         validators=[active_brand]
     )
     manufacturer = models.ForeignKey(
-        ProductManufacturer,
-        on_delete=models.PROTECT,
-        blank=True, null=True,
-        validators=[active_manufacturer]
+        ProductManufacturer, on_delete=models.PROTECT,
+        blank=True, null=True, validators=[active_manufacturer]
     )
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
     creator_detail_on_delete = models.ForeignKey(
-        account_models.UserDetailOnDelete,
-        on_delete=models.PROTECT,
+        account_models.UserDetailOnDelete, on_delete=models.PROTECT,
         blank=True, null=True
     )
     size = models.ForeignKey(
@@ -307,7 +291,7 @@ class ProductItem(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.name}. price: {self.price}'
+        return f'${self.price}: {self.name}'
 
     def clean(self):
         if self.creator and self.creator_detail_on_delete:
@@ -315,22 +299,19 @@ class ProductItem(models.Model):
                 {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
             )
 
+        if self.available_to_date and self.available_to_date <= date.today():
+            raise ValidationError({'available_to_date': '"date" must be greater than today\'s date!'})
+
     def active_object(self):
         return self.is_active and not self.is_deleted
 
     class Meta:
         ordering = ['date_created', ]
         unique_together = ['department', 'product', 'brand', 'manufacturer', 'size', 'color']  # last
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(count_in_stock__gte=models.F('count_booked')),
-                name='the number of products being booked must not exceed the number of products in stock!'
-            )
-        ]
 
 
 class ProductItemHistory(models.Model):
-    quantity = models.PositiveSmallIntegerField(default=1)
+    quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)], default=1)
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
 
     product_item = models.ForeignKey(
@@ -338,17 +319,26 @@ class ProductItemHistory(models.Model):
         validators=[active_and_not_deleted_product_item]
     )
     adder = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
+    )
+    adder_detail_on_delete = models.ForeignKey(
+        account_models.UserDetailOnDelete, on_delete=models.PROTECT,
+        blank=True, null=True
     )
 
     def __str__(self):
         return f'{self.quantity}>> {self.product_item}'
 
+    def clean(self):
+        if self.adder and self.adder_detail_on_delete:
+            raise ValidationError(
+                {'adder_detail_on_delete': 'this field is automatically filled when the "adder" field is deleted'}
+            )
+
 
 class ProductStar(models.Model):
-    star = models.PositiveSmallIntegerField(choices=ProductStars.choices())
+    star = models.FloatField(validators=[MinValueValidator(1)], choices=ProductStars.choices())
 
     # connections
     product = models.ForeignKey(
@@ -381,13 +371,11 @@ class ProductComment(models.Model):
 
     # connections
     product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
+        Product, on_delete=models.CASCADE,
         validators=[active_and_not_deleted_product],
     )
     client = models.ForeignKey(
-        account_models.Client,
-        on_delete=models.SET_NULL, null=True,
+        account_models.Client, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user],
     )
     client_detail_on_delete = models.ForeignKey(

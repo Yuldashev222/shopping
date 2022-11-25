@@ -5,11 +5,10 @@ from django.db import transaction
 
 @transaction.atomic
 def create_default_groups(*args, **kwargs):
-    for index, group_detail in enumerate(settings.USER_GROUP_PERMISSIONS_LIST, 0):
-        group_name = group_detail[0].strip().lower()
+    for group_name in settings.USER_GROUP_PERMISSIONS:
         group, group_created = Group.objects.get_or_create(name=group_name)
         if group_created:
-            group_permissions = settings.USER_GROUP_PERMISSIONS_LIST[index][1]
+            group_permissions = settings.USER_GROUP_PERMISSIONS[group_name]
             permissions = []
             for app_label in group_permissions:
                 for codename in group_permissions[app_label]:
