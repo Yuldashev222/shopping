@@ -6,13 +6,13 @@ from rest_framework import (
     status
 )
 
-from api.v1.products.models import Category
+from api.v1.products.models import ProductCategory
 from api.v1.products.serializers.categories import ProductCategorySerializer
 from api.v1.products.permissions import IsStaffOrReadOnly
 
 
 class ProductCategoryAPIViewSet(viewsets.ModelViewSet):
-    queryset = Category.active_objects()
+    queryset = ProductCategory.active_objects()
     serializer_class = ProductCategorySerializer
     permission_classes = IsStaffOrReadOnly
 

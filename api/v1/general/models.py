@@ -9,10 +9,10 @@ class ShopAbout(models.Model):
     name = models.CharField(max_length=255)
     logo = models.ImageField(upload_to='Shop_About/logotype/')
 
-    date_created = models.DateTimeField(auto_now_add=True, editable=False, null=True)
-    date_updated = models.DateTimeField(auto_now=True, editable=False, null=True)
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(auto_now=True, editable=False)
 
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
-        validators=[active_and_not_deleted_user, is_director],
+        validators=[active_and_not_deleted_user, is_director],  # last
     )

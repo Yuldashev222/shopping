@@ -11,13 +11,13 @@ from .services import upload_location_delivery_file, upload_location_delivery_im
 
 
 class Delivery(models.Model):
-    title = models.CharField(blank=True, null=True, max_length=400)
+    title = models.CharField(blank=True, max_length=400)
     price = models.PositiveIntegerField(default=0, help_text='enter the price in dollars.')
     delivery_time_in_hour = models.FloatField(
         help_text='enter how many hours it will be delivered!',
         validators=[MinValueValidator(0.5)]
     )
-    desc_for_delivery_time = models.CharField(max_length=400, blank=True, null=True)
+    info_on_delivery_time = models.CharField(max_length=400, blank=True)
     status = models.CharField(
         max_length=20, choices=DeliveryStatuses.choices(),
         default=DeliveryStatuses.order_processing.name,
@@ -31,9 +31,7 @@ class Delivery(models.Model):
         validators=[active_and_not_deleted_user, is_staff]
     )
     creator_detail_on_delete = models.ForeignKey(
-        UserDetailOnDelete,
-        on_delete=models.PROTECT,
-        blank=True, null=True
+        UserDetailOnDelete, on_delete=models.PROTECT, blank=True, null=True
     )
     # -----------
 

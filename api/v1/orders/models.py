@@ -19,9 +19,10 @@ from .validators import not_confirmed
 
 class Order(models.Model):
     order_id = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)], verbose_name=_('ORDER ID'), unique=True
+        validators=[MinValueValidator(1)],
+        verbose_name=_('ORDER ID'), unique=True
     )
-    desc = models.TextField(max_length=1000, blank=True, null=True)
+    desc = models.TextField(max_length=1000, blank=True)
     contract_file = models.FileField(upload_to=upload_location_order_contract_file, blank=True, null=True)
     is_confirmed = models.BooleanField(default=False)  # last
 
@@ -35,12 +36,13 @@ class Order(models.Model):
         blank=True, null=True, related_name='client_orders'
     )
     vendor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='vendor_orders',
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        blank=True, related_name='vendor_confirmed_orders',
         validators=[active_and_not_deleted_user, is_vendor],
     ),
     vendor_detail_on_delete = models.ForeignKey(
         UserDetailOnDelete, on_delete=models.PROTECT,
-        blank=True, null=True, related_name='vendor_orders'
+        blank=True, null=True, related_name='vendor_confirmed_orders'
     )
     delivery = models.ForeignKey(
         Delivery, on_delete=models.PROTECT, blank=True, null=True,
@@ -56,6 +58,9 @@ class Order(models.Model):
     def __str__(self):
         return f'{self.order_id}. Client: {self.client}'
 
+    class Meta:
+        db_table = 'order'
+
     def clean(self):
         if self.client and self.client_detail_on_delete:
             raise ValidationError({'client_detail_on_delete': 'cannot be this field when the "client" field exists'})
@@ -64,7 +69,7 @@ class Order(models.Model):
             raise ValidationError({'vendor_detail_on_delete': 'cannot be this field when the "vendor" field exists'})
 
     def active_object(self):
-        return not self.is_deleted
+        return self.is_active and not self.is_deleted
 
 
 class OrderItem(models.Model):
@@ -85,6 +90,7 @@ class OrderItem(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     class Meta:
+        db_table = 'order_item'
         constraints = [
             models.UniqueConstraint(
                 fields=['product_item', 'order'],

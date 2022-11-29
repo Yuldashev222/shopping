@@ -9,11 +9,10 @@ from api.v1.accounts import models as account_models
 from api.v1.accounts.validators import is_staff, active_and_not_deleted_user
 from api.v1.delivery.models import Delivery
 from api.v1.general.validators import validate_date
-from api.v1.delivery.validators import active_and_not_deleted_delivery
 from api.v1.products.validators import (
-    active_category,
+    active_and_not_deleted_category,
     active_and_not_deleted_product,
-    active_brand,
+    active_and_not_deleted_brand,
     active_manufacturer,
     active_product_size,
     validate_color_hexa,
@@ -47,12 +46,13 @@ class ProductColor(models.Model):
         self.name = self.name.strip().lower()
 
     class Meta:
+        db_table = 'product_color'
         ordering = ('name',)
 
 
 class ProductSize(models.Model):
     name = models.CharField(max_length=100, unique=True, db_index=True)
-    desc = models.CharField(max_length=500, blank=True, null=True)
+    desc = models.CharField(max_length=500, blank=True)
     is_active = models.BooleanField(default=True)
 
     # connections
@@ -72,90 +72,8 @@ class ProductSize(models.Model):
         self.name = self.name.strip().lower()
 
     class Meta:
+        db_table = 'product_size'
         ordering = ('name',)
-
-
-class Brand(models.Model):
-    name = models.CharField(max_length=254, unique=True, db_index=True)
-
-    # connections
-    creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-        validators=[active_and_not_deleted_user, is_staff],
-    )
-    creator_detail_on_delete = models.ForeignKey(
-        account_models.UserDetailOnDelete,
-        on_delete=models.PROTECT, blank=True, null=True
-    )
-
-    date_created = models.DateTimeField(auto_now_add=True, editable=False)
-    date_updated = models.DateTimeField(auto_now=True, editable=False)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    def clean(self):
-        if self.creator and self.creator_detail_on_delete:
-            raise ValidationError(
-                {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
-            )
-
-    def active_object(self):
-        return self.is_active
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.name = self.name.strip().lower()
-
-    class Meta:
-        ordering = ('name',)
-
-
-class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True, db_index=True)
-
-    # connections
-    parent = models.ForeignKey(
-        'self', on_delete=models.PROTECT, blank=True, null=True,
-        validators=[active_category],
-    )
-    creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-        validators=[active_and_not_deleted_user, is_staff],
-    )
-    creator_detail_on_delete = models.ForeignKey(
-        account_models.UserDetailOnDelete,
-        on_delete=models.PROTECT, blank=True, null=True
-    )
-
-    date_created = models.DateTimeField(auto_now_add=True, editable=False)
-    date_updated = models.DateTimeField(auto_now=True, editable=False)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    def clean(self):
-        if self.creator and self.creator_detail_on_delete:
-            raise ValidationError(
-                {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
-            )
-
-    @classmethod
-    def active_objects(cls):
-        return cls.objects.filter(is_active=True)
-
-    def active_object(self):
-        return self.is_active
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.name = self.name.strip().lower()
-
-    class Meta:
-        ordering = ('name',)
-        verbose_name_plural = 'Categories'
 
 
 class ProductManufacturer(models.Model):
@@ -163,8 +81,7 @@ class ProductManufacturer(models.Model):
 
     # connections
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
 
@@ -183,27 +100,26 @@ class ProductManufacturer(models.Model):
         self.name = self.name.strip().lower()
 
     class Meta:
+        db_table = 'product_manufacturer'
         ordering = ('name',)
 
 
-class Product(models.Model):
-    name = models.CharField(max_length=255, unique=True, db_index=True)
-    desc = models.TextField(max_length=2000, blank=True)
-    tags = TaggableManager(blank=True)
+class Brand(models.Model):
+    name = models.CharField(max_length=254, unique=True, db_index=True)
 
     # connections
-    category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, validators=[active_category]
+    manufacturer = models.ForeignKey(
+        ProductManufacturer, on_delete=models.PROTECT,
+        validators=[active_manufacturer]
     )
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         validators=[active_and_not_deleted_user, is_staff],
     )
     creator_detail_on_delete = models.ForeignKey(
-        account_models.UserDetailOnDelete, on_delete=models.PROTECT,
-        blank=True, null=True
+        account_models.UserDetailOnDelete,
+        on_delete=models.PROTECT, blank=True, null=True
     )
-    # -----------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -226,23 +142,118 @@ class Product(models.Model):
         super().save(*args, **kwargs)
         self.name = self.name.strip().lower()
 
+    class Meta:
+        db_table = 'product_brand'
+        ordering = ('name',)
+
+
+class ProductCategory(models.Model):
+    name = models.CharField(max_length=255, unique=True, db_index=True)
+
+    # connections
+    parent = models.ForeignKey(
+        'self', on_delete=models.PROTECT, blank=True, null=True,
+        validators=[active_and_not_deleted_category],
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        validators=[active_and_not_deleted_user, is_staff],
+    )
+    creator_detail_on_delete = models.ForeignKey(
+        account_models.UserDetailOnDelete,
+        on_delete=models.PROTECT, blank=True, null=True
+    )
+
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(auto_now=True, editable=False)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        if self.creator and self.creator_detail_on_delete:
+            raise ValidationError(
+                {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
+            )
+
+    @classmethod
+    def active_objects(cls):
+        return cls.objects.filter(is_active=True)
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
+
+    class Meta:
+        db_table = 'product_category'
+        ordering = ('name',)
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
+
+
+class Product(models.Model):
+    name = models.CharField(max_length=255, unique=True, db_index=True)
+    desc = models.TextField(max_length=2000, blank=True)
+    tags = TaggableManager(blank=True)
+
+    # connections
+    category = models.ForeignKey(
+        ProductCategory, on_delete=models.PROTECT, validators=[active_and_not_deleted_category]
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, models.SET_NULL, null=True,
+        validators=[active_and_not_deleted_user, is_staff],
+    )
+    creator_detail_on_delete = models.ForeignKey(
+        account_models.UserDetailOnDelete, on_delete=models.PROTECT,
+        blank=True, null=True
+    )
+    # -----------
+
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
+    date_updated = models.DateTimeField(auto_now=True, editable=False)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'product'
+
+    def clean(self):
+        if self.creator and self.creator_detail_on_delete:
+            raise ValidationError(
+                {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
+            )
+
+    def active_object(self):
+        return self.is_active and not self.is_deleted
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.name = self.name.strip().lower()
+
 
 class ProductItem(models.Model):
     name = models.CharField(max_length=400, blank=True, null=True)
-    desc = models.TextField(max_length=1500, blank=True, null=True)
-    price = models.FloatField(validators=[MinValueValidator(0.1)])
+    desc = models.TextField(max_length=1500, blank=True)
+    price = models.FloatField(validators=[MinValueValidator(0)])
     department = models.CharField(max_length=1, choices=ProductDepartments.choices())
     count_in_stock = models.PositiveSmallIntegerField(default=0, help_text='how many do you want to add?')
     count_booked = models.PositiveSmallIntegerField(default=0)
     count_sold = models.PositiveIntegerField(default=0)
     available_from_date = models.DateField(
-        validators=[validate_date],
-        blank=True, null=True,
+        validators=[validate_date], blank=True, null=True,
         help_text='from what date the product is available',
     )
     available_to_date = models.DateField(
-        validators=[validate_date],
-        blank=True, null=True,
+        validators=[validate_date], blank=True, null=True,
         help_text='until when is the product available',
     )
     tags = TaggableManager(blank=True)
@@ -254,11 +265,7 @@ class ProductItem(models.Model):
     )
     brand = models.ForeignKey(
         Brand, on_delete=models.PROTECT, null=True, blank=True,
-        validators=[active_brand]
-    )
-    manufacturer = models.ForeignKey(
-        ProductManufacturer, on_delete=models.PROTECT,
-        blank=True, null=True, validators=[active_manufacturer]
+        validators=[active_and_not_deleted_brand]
     )
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL, models.SET_NULL, null=True,
@@ -298,7 +305,6 @@ class ProductItem(models.Model):
             raise ValidationError(
                 {'creator_detail_on_delete': 'this field is automatically filled when the "creator" field is deleted'}
             )
-
         if self.available_to_date and self.available_to_date <= date.today():
             raise ValidationError({'available_to_date': '"date" must be greater than today\'s date!'})
 
@@ -306,8 +312,9 @@ class ProductItem(models.Model):
         return self.is_active and not self.is_deleted
 
     class Meta:
+        db_table = 'product_item'
         ordering = ['date_created', ]
-        unique_together = ['department', 'product', 'brand', 'manufacturer', 'size', 'color']  # last
+        unique_together = ['department', 'product', 'brand', 'size', 'color']  # last
 
 
 class ProductItemHistory(models.Model):
@@ -328,7 +335,10 @@ class ProductItemHistory(models.Model):
     )
 
     def __str__(self):
-        return f'{self.quantity}>> {self.product_item}'
+        return f'{self.quantity} >> {self.product_item}'
+
+    class Meta:
+        db_table = 'product_item_history'
 
     def clean(self):
         if self.adder and self.adder_detail_on_delete:
@@ -358,6 +368,7 @@ class ProductStar(models.Model):
         return f'{self.star} stars'
 
     class Meta:
+        db_table = 'product_star'
         constraints = [
             models.UniqueConstraint(
                 fields=['client', 'product'],
@@ -390,6 +401,9 @@ class ProductComment(models.Model):
 
     def __str__(self):
         return f'{self.client}: {str(self.text).strip()[:30]}'
+
+    class Meta:
+        db_table = 'product_comment'
 
     def active_object(self):
         return self.is_active and not self.is_deleted

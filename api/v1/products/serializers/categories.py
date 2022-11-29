@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from api.v1.products.models import Category
+from api.v1.products.models import ProductCategory
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -10,5 +10,5 @@ class ProductCategorySerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(default=True)
 
     class Meta:
-        model = Category
+        model = ProductCategory
         fields = '__all__'

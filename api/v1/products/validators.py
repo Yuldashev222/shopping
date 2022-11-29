@@ -14,41 +14,41 @@ validate_color_hexa = RegexValidator(
 
 def active_and_not_deleted_product_item(product_item_id):
     product_item = product_models.ProductItem.objects.get(pk=product_item_id)
-    if not product_item.is_active or product_item.is_deleted:
+    if not product_item.active_object():
         raise ValidationError('object is not active')
 
 
 def active_and_not_deleted_product(product_id):
     product = product_models.Product.objects.get(pk=product_id)
-    if not product.is_active or product.is_deleted:
+    if not product.active_object():
         raise ValidationError('object is not active')
 
 
-def active_category(cat_id):
-    cat = product_models.Category.objects.get(pk=cat_id)
-    if not cat.is_active:
+def active_and_not_deleted_category(cat_id):
+    cat = product_models.ProductCategory.objects.get(pk=cat_id)
+    if not cat.active_object():
         raise ValidationError('object is not active')
 
 
-def active_brand(brand_id):
+def active_and_not_deleted_brand(brand_id):
     brand = product_models.Brand.objects.get(pk=brand_id)
-    if not brand.is_active:
+    if not brand.active_object():
         raise ValidationError('object is not active')
 
 
 def active_manufacturer(manufacturer_id):
     manufacturer = product_models.ProductManufacturer.objects.get(pk=manufacturer_id)
-    if not manufacturer.is_active:
+    if not manufacturer.active_object():
         raise ValidationError('object is not active')
 
 
 def active_product_size(product_size_id):
     product_size = product_models.ProductSize.objects.get(pk=product_size_id)
-    if not product_size.is_active:
+    if not product_size.active_object():
         raise ValidationError('object is not active')
 
 
 def active_product_color(product_color_id):
     product_color = product_models.ProductColor.objects.get(pk=product_color_id)
-    if not product_color.is_active:
+    if not product_color.active_object():
         raise ValidationError('object is not active')

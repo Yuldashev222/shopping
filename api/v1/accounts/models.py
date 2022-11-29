@@ -25,19 +25,18 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(_("Email address"), unique=True)
     first_name = models.CharField(_("First name"), max_length=30)
     last_name = models.CharField(_("Last name"), max_length=50)
+    role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
+
     date_joined = models.DateTimeField(_("Date joined"), auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(_("Date updated"), auto_now=True, editable=False)
-    role = models.CharField(_("User Role"), max_length=9, choices=CustomUserRole.choices())
 
     # connections
     creator = models.ForeignKey(
         'self', on_delete=models.SET_NULL, null=True, blank=True,
-        validators=[is_manager_or_director, active_and_not_deleted_user]
+        validators=[active_and_not_deleted_user, is_manager_or_director]
     )
     creator_detail_on_delete = models.ForeignKey(
-        'UserDetailOnDelete',
-        on_delete=models.PROTECT,
-        blank=True, null=True
+        'UserDetailOnDelete', on_delete=models.PROTECT, blank=True, null=True
     )
     # ----------
 
@@ -86,6 +85,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return f'{self.role}: {self.phone_number}'
 
     class Meta:
+        db_table = 'user'
         verbose_name = _("User")
         verbose_name_plural = _("Users")
         ordering = ('date_joined', 'role')
@@ -158,11 +158,14 @@ class UserDetailOnDelete(models.Model):
         return f'{self.phone_number}'
 
     def save(self, *args, **kwargs):
-        if self.role != CustomUserRole.client.name:
+        super().save(*args, **kwargs)
+        if self.role == CustomUserRole.client.name:
+            self.is_staff = False
+        else:
             self.is_staff = True
-        super(UserDetailOnDelete, self).save(*args, **kwargs)
 
     class Meta:
+        db_table = 'user_detail_on_delete'
         verbose_name = 'Deleted User Detail'
         verbose_name_plural = 'Users detail on delete'
 

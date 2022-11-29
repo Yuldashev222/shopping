@@ -22,11 +22,10 @@ class WishlistModelViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if isinstance(request.data, list):
-            Wishlist.objects.bulk_create()
-
             if len(request.data) > 20:
                 return response.Response(
-                    {'detail': ['You must send a maximum of 20 objects!']}, status=status.HTTP_207_MULTI_STATUS
+                    {'detail': ['You must send a maximum of 20 objects!']},
+                    status=status.HTTP_207_MULTI_STATUS
                 )
 
             serializer = self.get_serializer(data=request.data, many=True)

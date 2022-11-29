@@ -51,5 +51,5 @@ def is_manager_or_director(user_id):
 
 def active_and_not_deleted_user(user_id):
     user = get_user_model().objects.get(pk=user_id)
-    if not user.is_active or user.is_deleted:
+    if not user.active_object():
         raise ValidationError('object is not active')
