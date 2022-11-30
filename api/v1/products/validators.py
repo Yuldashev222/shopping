@@ -12,8 +12,9 @@ validate_color_hexa = RegexValidator(
 )
 
 
-def active_and_not_deleted_product_item(product_item_id):
-    product_item = product_models.ProductItem.objects.get(pk=product_item_id)
+def active_and_not_deleted_product_item(product_item):
+    if isinstance(product_item, int):
+        product_item = product_models.ProductItem.objects.get(pk=product_item)
     if not product_item.active_object():
         raise ValidationError('object is not active')
 

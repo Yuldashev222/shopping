@@ -1,7 +1,7 @@
 from rest_framework import routers
 
-from .views import WishlistModelViewSet, WishlistListRetrieveAPIView
+from .views import WishlistModelViewSet, WishlistListAPIView
 
 router = routers.SimpleRouter()
-router.register('dashboard', WishlistListRetrieveAPIView, basename='wishlist')
+router.register('dashboard', WishlistListAPIView, basename='wishlist-dashboard')
 router.register('', WishlistModelViewSet, basename='wishlist')

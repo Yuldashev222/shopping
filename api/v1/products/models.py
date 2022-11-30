@@ -286,7 +286,7 @@ class ProductItem(models.Model):
     # -----------
 
     main_image = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True,
-                                   help_text='This Main Image in Product')
+                                   help_text='This Main Image in Product')  # last
     image1 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
     image2 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
     image3 = models.ImageField(upload_to=upload_location_product_image, blank=True, null=True)
@@ -298,7 +298,9 @@ class ProductItem(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'${self.price}: {self.name}'
+        if self.name:
+            return f'${self.price}: {self.name}'
+        return f'${self.price}: {self.product.name[:20]}'
 
     def clean(self):
         if self.creator and self.creator_detail_on_delete:

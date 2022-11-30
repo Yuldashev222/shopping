@@ -171,31 +171,11 @@ class Discount(models.Model):
 class DiscountItem(models.Model):
     quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)], blank=True, null=True)
 
-    # connections
     discount = models.ForeignKey(
         Discount, models.PROTECT,
         validators=[active_and_not_deleted_discount, not_all_product, quota_available]
     )
-    product_item = models.ForeignKey(
-        ProductItem, on_delete=models.CASCADE, blank=True, null=True,
-        validators=[active_and_not_deleted_product_item]
-    )
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, blank=True, null=True,
-        validators=[active_and_not_deleted_product]
-    )
-    manufacturer = models.ForeignKey(
-        ProductManufacturer, on_delete=models.CASCADE,
-        validators=[active_manufacturer], blank=True, null=True
-    )
-    brand = models.ForeignKey(
-        Brand, on_delete=models.PROTECT, null=True, blank=True,
-        validators=[active_and_not_deleted_brand]
-    )
-    category = models.ForeignKey(
-        ProductCategory, on_delete=models.PROTECT, blank=True, null=True,
-        validators=[active_and_not_deleted_category]
-    )
+
     adder = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, validators=[active_and_not_deleted_user, is_manager_or_director],
@@ -205,6 +185,37 @@ class DiscountItem(models.Model):
         blank=True, null=True
     )
     # -----------
+
+    # discount item - 1
+    product_item = models.ForeignKey(
+        ProductItem, on_delete=models.CASCADE, blank=True, null=True,
+        validators=[active_and_not_deleted_product_item]
+    )
+
+    # discount item - 2
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, blank=True, null=True,
+        validators=[active_and_not_deleted_product]
+    )
+
+    # discount item - 3
+    manufacturer = models.ForeignKey(
+        ProductManufacturer, on_delete=models.CASCADE,
+        validators=[active_manufacturer], blank=True, null=True
+    )
+
+    # discount item - 4
+    brand = models.ForeignKey(
+        Brand, on_delete=models.PROTECT, null=True, blank=True,
+        validators=[active_and_not_deleted_brand]
+    )
+
+    # discount item - 5
+    category = models.ForeignKey(
+        ProductCategory, on_delete=models.PROTECT, blank=True, null=True,
+        validators=[active_and_not_deleted_category]
+    )
+    # ----------------------
 
     date_added = models.DateTimeField(auto_now_add=True, editable=False)
     date_updated = models.DateTimeField(auto_now=True, editable=False)
@@ -237,11 +248,30 @@ class DiscountItem(models.Model):
         if errors:
             raise ValidationError(errors)
 
-        if self.product_item and self.product:
-            raise ValidationError('product and product item choose one of the two')
+        if self.product_item and (self.product or self.manufacturer or self.brand or self.category):
+            raise ValidationError(
+                '"product_item", "product", "manufacturer", "brand", "category" choose one of the five relation'
+            )
 
-        if not (self.product_item or self.product):
-            raise ValidationError('it is mandatory to choose one of the two')
+        elif self.product and (self.product_item or self.manufacturer or self.brand or self.category):
+            raise ValidationError(
+                '"product_item", "product", "manufacturer", "brand", "category" choose one of the five relation'
+            )
+
+        elif self.manufacturer and (self.product_item or self.product or self.brand or self.category):
+            raise ValidationError(
+                '"product_item", "product", "manufacturer", "brand", "category" choose one of the five relation'
+            )
+
+        elif self.brand and (self.product_item or self.product or self.manufacturer or self.category):
+            raise ValidationError(
+                '"product_item", "product", "manufacturer", "brand", "category" choose one of the five relation'
+            )
+
+        elif self.category and (self.product_item or self.product or self.manufacturer or self.brand):
+            raise ValidationError(
+                '"product_item", "product", "manufacturer", "brand", "category" choose one of the five relation'
+            )
 
         if (
                 self.quantity and

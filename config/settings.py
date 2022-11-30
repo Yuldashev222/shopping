@@ -221,7 +221,7 @@ DIRECTOR_GROUP_PERMISSIONS = {
     ],
     'products': [
         'add_brand', 'change_brand', 'delete_brand', 'view_brand',
-        'add_category', 'change_category', 'delete_category', 'view_category',
+        'add_productcategory', 'change_productcategory', 'delete_productcategory', 'view_productcategory',
         'add_product', 'change_product', 'delete_product', 'view_product',
         'add_productcolor', 'change_productcolor', 'delete_productcolor', 'view_productcolor',
         'add_productcomment', 'delete_productcomment', 'view_productcomment',
@@ -250,7 +250,7 @@ MANAGER_GROUP_PERMISSIONS = {
     'products': [
         'view_productstar', 'view_brand',
         'add_brand', 'change_brand', 'delete_brand', 'view_productmanufacturer',
-        'add_category', 'change_category', 'delete_category', 'view_category',
+        'add_productcategory', 'change_productcategory', 'delete_productcategory', 'view_productcategory',
         'add_product', 'change_product', 'delete_product', 'view_product',
         'add_productcolor', 'change_productcolor', 'delete_productcolor', 'view_productcolor',
         'add_productcomment', 'delete_productcomment', 'view_productcomment',
@@ -287,7 +287,7 @@ VENDOR_GROUP_PERMISSIONS = {
     ],
     'products': [
         'view_productstar', 'view_product', 'add_brand', 'change_brand',
-        'add_category', 'change_category', 'view_category', 'add_product', 'change_product',
+        'add_productcategory', 'change_productcategory', 'view_productcategory', 'add_product', 'change_product',
         'add_productcolor', 'change_productcolor', 'delete_productcolor', 'view_productcolor',
         'add_productcomment', 'delete_productcomment', 'view_productcomment', 'view_brand',
         'add_productitem', 'change_productitem', 'view_productitem',
@@ -319,7 +319,7 @@ CLIENT_GROUP_PERMISSIONS = {
 
     'products': [
         'view_productcomment', 'view_productsize', 'delete_productstar',
-        'view_brand', 'view_category', 'view_product',
+        'view_brand', 'view_productcategory', 'view_product',
         'add_productcomment', 'change_productcomment', 'delete_productcomment',
         'view_productcolor', 'view_productitem', 'view_productmanufacturer',
         'view_productstar', 'add_productstar', 'change_productstar'

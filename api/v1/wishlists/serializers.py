@@ -3,12 +3,26 @@ from rest_framework import serializers
 from .models import Wishlist
 
 
-class WishlistSerializer(serializers.ModelSerializer):
+class BaseWishlistSerializer(serializers.ModelSerializer):
+    product_image = serializers.ImageField(source='product_item.main_image', read_only=True)
+    product_name = serializers.SerializerMethodField(read_only=True)
+    product_price = serializers.CharField(source='product_item.price', read_only=True)
+    product_availability = serializers.BooleanField(source='product_item.count_in_stock', read_only=True)
+
+    def get_product_name(self, wishlist):
+        if wishlist.product_item.name:
+            return wishlist.product_item.name
+        else:
+            return wishlist.product_item.product.name
+
+    def get_product_image(self, wishlist):
+        request = self.context.get('context')
+        image_url = wishlist.product_item.main_image
+        return request.build_absolute_uri(image_url)
+
+
+class WishlistSerializer(BaseWishlistSerializer):
     client = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    product_image_url = serializers.SerializerMethodField(read_only=True)
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_price = serializers.CharField(source='product.price', read_only=True)
-    product_availability = serializers.BooleanField(source='product.count_in_stock', read_only=True)
 
     class Meta:
         model = Wishlist
@@ -16,32 +30,21 @@ class WishlistSerializer(serializers.ModelSerializer):
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=model.objects.all(),
-                fields=['product', 'client'],
+                fields=['product_item', 'client'],
             )
         ]
         extra_kwargs = {
-            'product': {'write_only': True},
+            'product_item': {'write_only': True},
+            'product_image': {'read_only': True},
         }
 
-    def get_product_image_url(self, wishlist):
-        request = self.context.get('context')
-        main_image = wishlist.product.images.filter(is_main=True)
-        if main_image.exists():
-            image_url = main_image.first().url
-        else:
-            image_url = wishlist.product.images.first().url
 
-        return image_url
-
-
-class WishlistListRetrieveSerializer(serializers.ModelSerializer):
-    product_image = serializers.ImageField(source='product.images')
-    product_name = serializers.CharField(source='product.name')
-    product_price = serializers.CharField(source='product.price')
-    product_availability = serializers.BooleanField(source='product.count_in_stock')
+class WishlistListSerializer(BaseWishlistSerializer):
     client = serializers.StringRelatedField()
     client_id = serializers.IntegerField()
+    product_id = serializers.IntegerField(source='product_item.product.id')
+    product_item_id = serializers.IntegerField(source='product_item.id')
 
     class Meta:
         model = Wishlist
-        exclude = ['id']
+        exclude = ['id', 'product_item']
