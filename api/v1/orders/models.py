@@ -6,12 +6,9 @@ from django.core.validators import MinValueValidator
 
 from api.v1.accounts.models import UserDetailOnDelete
 from api.v1.products.models import ProductItem
-from api.v1.delivery.models import Delivery
-from api.v1.delivery.validators import active_and_not_deleted_delivery
 from api.v1.products.validators import active_and_not_deleted_product
-from api.v1.accounts.validators import is_client, is_vendor, active_and_not_deleted_user
+from api.v1.accounts.validators import is_client, active_and_not_deleted_user
 from api.v1.orders.validators import active_and_not_deleted_order
-
 
 from .services import upload_location_order_contract_file
 from .validators import not_confirmed
@@ -19,8 +16,7 @@ from .validators import not_confirmed
 
 class Order(models.Model):
     order_id = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)],
-        verbose_name=_('ORDER ID'), unique=True
+        unique=True, validators=[MinValueValidator(1)], verbose_name=_('ORDER ID')
     )
     desc = models.TextField(max_length=1000, blank=True)
     contract_file = models.FileField(upload_to=upload_location_order_contract_file, blank=True, null=True)
@@ -35,19 +31,6 @@ class Order(models.Model):
         UserDetailOnDelete, on_delete=models.PROTECT,
         blank=True, null=True, related_name='client_orders'
     )
-    vendor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-        blank=True, related_name='vendor_confirmed_orders',
-        validators=[active_and_not_deleted_user, is_vendor],
-    ),
-    vendor_detail_on_delete = models.ForeignKey(
-        UserDetailOnDelete, on_delete=models.PROTECT,
-        blank=True, null=True, related_name='vendor_confirmed_orders'
-    )
-    delivery = models.ForeignKey(
-        Delivery, on_delete=models.PROTECT, blank=True, null=True,
-        validators=[active_and_not_deleted_delivery],
-    )  # last
     # -----------
 
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -64,9 +47,6 @@ class Order(models.Model):
     def clean(self):
         if self.client and self.client_detail_on_delete:
             raise ValidationError({'client_detail_on_delete': 'cannot be this field when the "client" field exists'})
-
-        if self.vendor and self.vendor_detail_on_delete:
-            raise ValidationError({'vendor_detail_on_delete': 'cannot be this field when the "vendor" field exists'})
 
     def active_object(self):
         return self.is_active and not self.is_deleted

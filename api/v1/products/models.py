@@ -7,7 +7,6 @@ from django.core.validators import MinValueValidator
 
 from api.v1.accounts import models as account_models
 from api.v1.accounts.validators import is_staff, active_and_not_deleted_user
-from api.v1.delivery.models import Delivery
 from api.v1.general.validators import validate_date
 from api.v1.products.validators import (
     active_and_not_deleted_category,

@@ -9,7 +9,7 @@ from rest_framework import (
 
 from api.v1.products.models import Brand
 from api.v1.products.serializers.brands import ProductBrandSerializer, ProductBrandDashboardSerializer
-from api.v1.general.permissions import IsStaff
+from api.v1.accounts.permissions import IsStaff
 
 
 class ProductBrandAPIViewSet(mixins.CreateModelMixin,

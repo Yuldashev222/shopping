@@ -9,11 +9,10 @@ from rest_framework import (
 
 from api.v1.accounts.models import Vendor
 from api.v1.accounts.serializers.vendors import CreateVendorSerializer
-from api.v1.accounts.permissions import IsLeader
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated & IsLeader])
+@permission_classes([IsAuthenticated])
 def vendor_register(request, *args, **kwargs):
     serializer = CreateVendorSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

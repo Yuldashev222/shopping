@@ -7,7 +7,7 @@ from rest_framework import (
 
 from api.v1.products.models import Product
 from api.v1.products.serializers.products import ProductSerializer
-from api.v1.general.permissions import IsStaff
+from api.v1.accounts.permissions import IsStaff
 
 
 class ProductAPIViewSet(viewsets.ModelViewSet):

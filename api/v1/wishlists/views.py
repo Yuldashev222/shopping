@@ -1,5 +1,5 @@
-from django.db.models import Q, F, Count
-from django.shortcuts import get_object_or_404
+from django.http import Http404
+from django.core.exceptions import ValidationError
 from rest_framework import (
     viewsets,
     mixins,
@@ -8,7 +8,8 @@ from rest_framework import (
     permissions as rest_permissions
 )
 
-from api.v1.general.permissions import IsStaff, IsClient, IsOwnerClient
+from api.v1.accounts.permissions import IsStaff, IsClient
+from api.v1.accounts.models import Client
 from .models import Wishlist
 from .serializers import WishlistSerializer, WishlistListSerializer
 
@@ -17,15 +18,18 @@ class WishlistModelViewSet(mixins.CreateModelMixin,
                            mixins.DestroyModelMixin,
                            mixins.ListModelMixin,
                            viewsets.GenericViewSet):
-
     queryset = Wishlist.objects.all()
     serializer_class = WishlistSerializer
-    permission_classes = [rest_permissions.IsAuthenticated, IsClient, IsOwnerClient]
+    permission_classes = [rest_permissions.IsAuthenticated, IsClient]
+    filterset_fields = ['product_item', 'date_added']
+    search_fields = ['product_item__name']
+    ordering_fields = ['date_added', 'product_item__name']
+    ordering = '-date_added'
 
     def get_queryset(self):
         queryset = Wishlist.objects.filter(
             client_id=self.request.user.id
-        ).annotate(asdasd=Count('product_item__product__name')).select_related('product_item')
+        ).select_related('product_item', 'product_item__product')
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -47,13 +51,21 @@ class WishlistModelViewSet(mixins.CreateModelMixin,
 class WishlistListAPIView(mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = WishlistListSerializer
     permission_classes = [rest_permissions.IsAuthenticated, IsStaff]
+    filterset_fields = ['product_item__product', 'product_item', 'client', 'date_added']
+    search_fields = ['client__phone_number', 'client__email', 'client__first_name', 'client__last_name']
+    ordering_fields = ['date_added', 'product_item__name', 'product_item__product__name']
+    ordering = '-date_added'
+    lookup_field = 'client_id'
 
     def get_queryset(self):
-        queryset = Wishlist.objects.select_related('product_item').select_related('product_item__product').all()
+        queryset = Wishlist.objects.select_related('client', 'product_item', 'product_item__product').all()
         return queryset
 
-    def get_object(self):
-        pk = self.kwargs['pk']
-        obj = get_object_or_404(Wishlist, pk=pk)
-        self.check_object_permissions(self.request, obj)
-        return obj
+    def destroy(self, request, *args, **kwargs):
+        client_id = self.kwargs['client_id']
+        try:
+            client = Client.objects.get(pk=client_id)
+            Wishlist.objects.filter(client_id=client.pk).delete()
+            return response.Response(status=status.HTTP_204_NO_CONTENT)
+        except (TypeError, ValueError, ValidationError, Client.DoesNotExist):
+            raise Http404

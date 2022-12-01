@@ -11,5 +11,5 @@ def not_confirmed(order_id):
 
 def active_and_not_deleted_order(order_id):
     order = order_models.Order.objects.get(pk=order_id)
-    if order.active_object():
+    if not order.active_object():
         raise ValidationError('object is not active')
