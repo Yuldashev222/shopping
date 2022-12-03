@@ -58,7 +58,10 @@ class WishlistListAPIView(mixins.ListModelMixin, mixins.DestroyModelMixin, views
     lookup_field = 'client_id'
 
     def get_queryset(self):
-        queryset = Wishlist.objects.select_related('client', 'product_item', 'product_item__product').all()
+        queryset = Wishlist.objects.select_related(
+            'client',
+            'product_item',
+            'product_item__product')
         return queryset
 
     def destroy(self, request, *args, **kwargs):

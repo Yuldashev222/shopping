@@ -26,9 +26,14 @@ urlpatterns = [
 
     path('admin/', admin.site.urls),
     path('api/v1/accounts/', include('api.v1.accounts.urls')),
+    path('api/v1/deliveries/', include('api.v1.delivery.urls')),
     path('api/v1/products/', include('api.v1.products.urls')),
     path('api/v1/wishlists/', include('api.v1.wishlists.urls')),
-    path('api/v1/orders/', include('api.v1.orders.urls')),
+    path('api/v1/orders/', include('api.v1.orders.urls'))
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += path('debug/', include(debug_toolbar.urls)),
+
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

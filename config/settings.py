@@ -14,6 +14,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# DEBUG TOOLBAR
+INTERNAL_IPS = ['127.0.0.1']
+
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Application definition
@@ -34,6 +37,7 @@ LIBS = [
     'phonenumber_field',
     'multiselectfield',
     'django_filters',
+    'debug_toolbar',
 ]
 
 APPS = [
@@ -57,6 +61,7 @@ APPS = [
 INSTALLED_APPS = DEFAULT_APPS + LIBS + APPS
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

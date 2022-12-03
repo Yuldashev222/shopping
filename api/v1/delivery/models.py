@@ -18,9 +18,9 @@ class Delivery(models.Model):
     price = models.PositiveIntegerField(default=0, help_text='enter the price in dollars.')
     delivery_time_in_hour = models.FloatField(
         help_text='enter how many hours it will be delivered!',
-        validators=[MinValueValidator(0.5)]
+        validators=[MinValueValidator(0.5)],
     )
-    info_on_delivery_time = models.CharField(max_length=400, blank=True)
+    info_on_delivery_time = models.TextField(max_length=2000, blank=True)
     file = models.FileField(upload_to=upload_location_delivery_file, blank=True, null=True)
     image = models.ImageField(upload_to=upload_location_delivery_image, blank=True, null=True)
 
@@ -50,6 +50,10 @@ class Delivery(models.Model):
 
     def active_object(self):
         return self.is_active and not self.is_deleted
+
+    def save(self, *args, **kwargs):
+        super().save(*args, *kwargs)
+        self.delivery_time_in_hour = round(self.delivery_time_in_hour, 1)
 
     class Meta:
         db_table = 'delivery'

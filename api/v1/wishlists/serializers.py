@@ -52,3 +52,6 @@ class WishlistListSerializer(BaseWishlistSerializer):
     class Meta:
         model = Wishlist
         exclude = ['id', 'product_item', 'client']
+        read_only_fields = [
+            'product_item_name', 'product_name', 'client_full_name', 'client_phone_number', 'client_email', 'product_id'
+        ]
