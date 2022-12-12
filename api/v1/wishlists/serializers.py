@@ -13,8 +13,7 @@ class BaseWishlistSerializer(serializers.ModelSerializer):
     def get_product_name(self, wishlist):
         if wishlist.product_item.name:
             return wishlist.product_item.name
-        else:
-            return wishlist.product_item.product.name
+        return wishlist.product_item.product.name
 
     def get_product_image(self, wishlist):
         request = self.context.get('context')

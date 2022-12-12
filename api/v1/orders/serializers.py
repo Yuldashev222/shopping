@@ -12,7 +12,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         # depth = 1
         model = OrderItem
-        exclude = ['is_active', 'is_deleted', 'date_updated']
+        exclude = ['is_active', 'is_deleted']
         validators = [
             serializers.UniqueTogetherValidator(
                 queryset=model.objects.all(),

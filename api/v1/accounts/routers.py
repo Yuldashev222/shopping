@@ -1,11 +1,7 @@
-from rest_framework import routers
+from rest_framework.routers import SimpleRouter
 
-from api.v1.accounts.views.all_users import UserAPIViewSet
-from api.v1.accounts.views.clients import ClientAPIViewSet
+from .views.user_detail_on_delete import DeletedUserDataAPIViewSet
 
-router = routers.SimpleRouter()
+router = SimpleRouter()
 
-router.register('clients', ClientAPIViewSet)
-router.register('', UserAPIViewSet)
-
-
+router.register('deleted', DeletedUserDataAPIViewSet, basename='deleted-user')

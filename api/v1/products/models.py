@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
 from api.v1.accounts import models as account_models
-from api.v1.accounts.validators import is_staff, active_and_not_deleted_user
+from api.v1.accounts.validators import is_staff, active_and_not_deleted_user, is_client
 from api.v1.general.validators import validate_date
 from api.v1.products.validators import (
     active_and_not_deleted_category,
@@ -357,7 +357,7 @@ class ProductStar(models.Model):
         validators=[active_and_not_deleted_product],
     )
     client = models.ForeignKey(
-        account_models.Client, on_delete=models.SET_NULL,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True,
         validators=[active_and_not_deleted_user],
     )
@@ -387,8 +387,8 @@ class ProductComment(models.Model):
         validators=[active_and_not_deleted_product],
     )
     client = models.ForeignKey(
-        account_models.Client, on_delete=models.SET_NULL, null=True,
-        validators=[active_and_not_deleted_user],
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        validators=[active_and_not_deleted_user, is_client],
     )
     client_detail_on_delete = models.ForeignKey(
         account_models.UserDetailOnDelete,

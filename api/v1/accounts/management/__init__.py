@@ -12,9 +12,6 @@ def create_default_groups(*args, **kwargs):
             permissions = []
             for app_label in group_permissions:
                 for codename in group_permissions[app_label]:
-                    print()
-                    print(app_label, codename, str(codename).split('_')[1])
-                    print()
                     permissions.append(
                         Permission.objects.get_by_natural_key(
                             codename=codename,

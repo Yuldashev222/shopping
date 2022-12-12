@@ -1,48 +1,43 @@
-from rest_framework import serializers, validators
-from rest_framework_simplejwt.serializers import PasswordField
+from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 
-from api.v1.accounts import models, enums
+from api.v1.accounts.models import CustomUser, Client
+from api.v1.accounts.enums import CustomUserRole
+from .all_users import BaseUserRetrieveUpdateSerializer, BaseUserListSerializer
 
 
-class ClientSerializer(serializers.ModelSerializer):
+class ClientListSerializer(BaseUserListSerializer):
+    class Meta(BaseUserListSerializer.Meta):
+        fields = ['id'] + BaseUserListSerializer.Meta.fields
+
+
+class ClientRegisterSerializer(serializers.ModelSerializer):
+    region1 = serializers.CharField(source='get_region_1_display', read_only=True)
+
     class Meta:
-        model = models.Client
-        fields = (
-            'phone_number',
-            'second_phone_number',
-            'email',
-            'first_name',
-            'last_name',
-            'desc',
-            'profile_picture',
-            'password',
-            # 'country_1',
-            # 'region_1',
-            # 'district_1',
-            # 'street_1',
-            # 'country_2',
-            # 'region_2',
-            # 'district_2',
-            # 'street_2',
-            # 'country_3',
-            # 'region_3',
-            # 'district_3',
-            # 'street_3',
-        )
+        model = CustomUser
+        fields = ['phone_number', 'email', 'first_name', 'last_name', 'password', 'region_1', 'region1']
         extra_kwargs = {
-            'password': {'write_only': True, 'style': {'input_type': 'password'}},
-        }
-
-
-class CreateClientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Client
-        fields = ['phone_number', 'email', 'first_name', 'last_name', 'password', 'role']
-        extra_kwargs = {
-            'password': {'write_only': True},
-            'role': {'read_only': True}
+            'password': {'validators': [validate_password], 'write_only': True},
+            'first_name': {'min_length': 4},
+            'last_name': {'min_length': 6},
+            'region_1': {'write_only': True},
         }
 
     def create(self, validated_data):
-        role = enums.CustomUserRole.client.name
-        return models.Client.objects.create_user(role=role, **validated_data)
+        instance = self.Meta.model.objects.create_user(role=CustomUserRole.client.name, **validated_data)
+        return instance
+
+
+class ClientRetrieveUpdateSerializer(BaseUserRetrieveUpdateSerializer):
+    class Meta(BaseUserRetrieveUpdateSerializer.Meta):
+        exclude = BaseUserRetrieveUpdateSerializer.Meta.exclude + [
+            'last_login', 'creator', 'creator_detail_on_delete', 'is_active', 'is_deleted'
+        ]
+
+
+class OwnerClientRetrieveUpdateSerializer(BaseUserRetrieveUpdateSerializer):
+    class Meta(BaseUserRetrieveUpdateSerializer.Meta):
+        exclude = BaseUserRetrieveUpdateSerializer.Meta.exclude + [
+            'last_login', 'creator', 'creator_detail_on_delete', 'is_active', 'is_deleted'
+        ]

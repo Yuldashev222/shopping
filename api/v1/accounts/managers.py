@@ -51,10 +51,6 @@ class ClientManager(CustomUserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role=CustomUserRole.client.name)
 
-    def _create_user(self, **extra_fields):
-        role = CustomUserRole.client.name
-        self._create_user(role=role, **extra_fields)
-
 
 class DirectorManager(CustomUserManager):
     def get_queryset(self):
@@ -62,31 +58,23 @@ class DirectorManager(CustomUserManager):
 
     def _create_user(self, **extra_fields):
         role = CustomUserRole.director.name
-        self._create_user(role=role, **extra_fields)
+        super()._create_user(role=role, **extra_fields)
+
+    def create(self, role=None, *args, **kwargs):
+        role = CustomUserRole.director.name
+        super().create(role=role, *args, **kwargs)
 
 
 class ManagerManager(CustomUserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role=CustomUserRole.manager.name)
 
-    def _create_user(self, **extra_fields):
-        role = CustomUserRole.manager.name
-        self._create_user(role=role, **extra_fields)
-
 
 class VendorManager(CustomUserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role=CustomUserRole.vendor.name)
 
-    def _create_user(self, **extra_fields):
-        role = CustomUserRole.vendor.name
-        self._create_user(role=role, **extra_fields)
-
 
 class DeveloperManager(CustomUserManager):
     def get_queryset(self):
         return super().get_queryset().filter(role=CustomUserRole.developer.name)
-
-    def _create_user(self, **extra_fields):
-        role = CustomUserRole.developer.name
-        self._create_user(role=role, **extra_fields)

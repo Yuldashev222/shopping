@@ -126,9 +126,11 @@ BASE_USER_EMAIL = 'super@gmail.com'
 BASE_USER_PASSWORD = 'pbkdf2_sha256$320000$Bm7c6Hdu9WXa3DAlV082fF$2j1D1ygwUfr2/m2zMF3g6YzYW3o6G7W/i5WW/TU0fhk='
 
 AUTHENTICATION_BACKENDS = [
-
     'api.v1.accounts.backends.CustomModelBackend',
 ]
+
+DATE_FORMAT = '%d.%m.%Y'
+DATETIME_FORMAT = '%d.%m.%Y %H:%M:%S'
 
 EMAIL_BACKEND = env('EMAIL_BACKEND')
 EMAIL_HOST = env('EMAIL_HOST')
@@ -140,15 +142,21 @@ EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
         # 'api.v1.accounts.authentication.CustomAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         # 'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        # 'api.v1.accounts.permissions.IsActiveAndNotDeleted',
+    ),
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 30,
+
+    'DATETIME_FORMAT': '%d.%m.%Y %H:%M:%S',
+    'DATE_FORMAT': '%d.%m.%Y',
 
     'DEFAULT_FILTER_BACKENDS': [
         'rest_framework.filters.SearchFilter',
@@ -160,13 +168,13 @@ from rest_framework.pagination import PageNumberPagination
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=5),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
-    'UPDATE_LAST_LOGIN': False,
+    'UPDATE_LAST_LOGIN': True,  # last
 
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
+    'SIGNING_KEY': env('JWT_SIGNING_KEY'),
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
@@ -177,7 +185,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
-    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    'USER_AUTHENTICATION_RULE': 'api.v1.accounts.authentication.default_user_authentication_rule',
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
@@ -196,6 +204,9 @@ STATIC_ROOT = BASE_DIR / 'static/'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media/'
+
+LOGIN_URL = 'user-login'
+LOGIN_REDIRECT_URL = 'user-profile'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.CustomUser'
@@ -216,11 +227,12 @@ DIRECTOR_GROUP_PERMISSIONS = {
     'wishlists': ['delete_wishlist', 'view_wishlist'],
 
     'accounts': [
+        'add_customuser', 'change_customuser', 'delete_customuser', 'view_customuser',
         'add_client', 'change_client', 'delete_client', 'view_client',
         'change_director', 'delete_director', 'view_director',
         'add_manager', 'change_manager', 'delete_manager', 'view_manager',
-        'add_userdetailondelete', 'change_userdetailondelete', 'delete_userdetailondelete',
-        'view_userdetailondelete', 'add_vendor', 'change_vendor', 'delete_vendor', 'view_vendor'
+        'delete_userdetailondelete', 'view_userdetailondelete',
+        'add_vendor', 'change_vendor', 'delete_vendor', 'view_vendor'
     ],
 
     'delivery': ['add_delivery', 'change_delivery', 'delete_delivery', 'view_delivery'],
@@ -257,9 +269,10 @@ DIRECTOR_GROUP_PERMISSIONS = {
 MANAGER_GROUP_PERMISSIONS = {
     'accounts': [
         'add_client', 'change_client', 'delete_client', 'view_client',
+        'add_customuser', 'change_customuser', 'delete_customuser', 'view_customuser',
         'delete_director', 'view_director', 'change_manager', 'view_manager',
-        'add_userdetailondelete', 'change_userdetailondelete', 'delete_userdetailondelete',
-        'view_userdetailondelete', 'add_vendor', 'change_vendor', 'delete_vendor', 'view_vendor'
+        'delete_userdetailondelete', 'view_userdetailondelete',
+        'add_vendor', 'change_vendor', 'delete_vendor', 'view_vendor'
     ],
     'products': [
         'view_productstar', 'view_brand',
@@ -295,9 +308,8 @@ MANAGER_GROUP_PERMISSIONS = {
 
 VENDOR_GROUP_PERMISSIONS = {
     'accounts': [
-        'add_client', 'change_client', 'view_client', 'change_userdetailondelete',
-        'delete_director', 'view_director', 'view_manager', 'add_userdetailondelete',
-        'view_userdetailondelete', 'view_vendor'
+        'add_client', 'change_client', 'view_client', 'delete_client', 'view_customuser',
+        'view_director', 'view_manager', 'view_userdetailondelete', 'view_vendor'
     ],
     'products': [
         'view_productstar', 'view_product', 'add_brand', 'change_brand',

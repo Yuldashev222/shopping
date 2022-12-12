@@ -24,12 +24,12 @@ class Order(models.Model):
 
     # connections
     client = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='client_orders',
-        validators=[active_and_not_deleted_user, is_client],
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        validators=[active_and_not_deleted_user, is_client]
     ),
     client_detail_on_delete = models.ForeignKey(
         UserDetailOnDelete, on_delete=models.PROTECT,
-        blank=True, null=True, related_name='client_orders'
+        blank=True, null=True
     )
     # -----------
 

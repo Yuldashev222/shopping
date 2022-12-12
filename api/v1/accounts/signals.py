@@ -6,12 +6,13 @@ from django.dispatch import receiver
 from django.contrib.auth.models import Group, Permission
 
 from .enums import CustomUserRole
-from .models import UserDetailOnDelete
+from .models import UserDetailOnDelete, CustomUser
 
 
 def on_transaction_commit(func):
     def inner(*args, **kwargs):
         transaction.on_commit(lambda: func(*args, **kwargs))
+
     return inner
 
 
@@ -43,9 +44,19 @@ def save_user_data(instance, *args, **kwargs):
         user_detail.save()
 
     if instance.role != CustomUserRole.client.name:
+        instance = CustomUser.objects.filter(pk=instance.id).prefetch_related(
+            'customuser_set',
+            'brand_set',
+            'productcategory_set',
+            'product_set',
+            'productitem_set',
+            'delivery_set',
+            'discount_set',
+            'discountitem_set'
+        ).first()
         users = instance.customuser_set.all()
         brands = instance.brand_set.all()
-        cats = instance.category_set.all()
+        cats = instance.productcategory_set.all()
         products = instance.product_set.all()
         product_items = instance.productitem_set.all()
         deliveries = instance.delivery_set.all()
@@ -76,15 +87,18 @@ def save_user_data(instance, *args, **kwargs):
         if discount_items.exists():
             discount_items.update(adder_detail_on_delete_id=user_detail.id)
 
-        if user_detail.role == CustomUserRole.vendor.name:
-            orders = instance.vendor_orders.all()
-
-            if orders.exists():
-                orders.update(vendor_detail_on_delete_id=user_detail.id)
+        # if user_detail.role == CustomUserRole.vendor.name:
+        #     orders = instance.vendor_orders.all()
+        #
+        #     if orders.exists():
+        #         orders.update(vendor_detail_on_delete_id=user_detail.id)  # last
 
     else:
+        instance = CustomUser.objects.filter(pk=instance.id).prefetch_related(
+            'productcomment_set', 'order_set',
+        ).first()
         comments = instance.productcomment_set.all()
-        orders = instance.client_orders.all()
+        orders = instance.order_set.all()  # last
 
         if comments.exists():
             comments.update(client_detail_on_delete_id=user_detail.id)

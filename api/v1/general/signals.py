@@ -8,5 +8,4 @@
 # @receiver(pre_save, sender=ShopAbout)
 # def save_shop_about(*args, **kwargs):
 #     if ShopAbout.objects.exists():
-#         print(1111111111)
 #         ValidationError({'error': ['there should be only one object in this table!']})

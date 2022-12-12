@@ -14,5 +14,5 @@ class OrderItemAPIViewSet(viewsets.ModelViewSet):
     permission_classes = [rest_permissions.IsAuthenticated, IsClient, IsOwnerOrderClient]
 
     def get_queryset(self):
-        queryset = OrderItem.objects.filter(order__client_id=self.request.user.id).select_related('product').all()
+        queryset = OrderItem.objects.filter(order__client_id=self.request.user.id).select_related('product_item').all()
         return queryset
